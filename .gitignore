@@ -1,2 +1,5 @@
 .vscode
 .idea
+/main.dSYM
+/main
+/cmake-build-debug
