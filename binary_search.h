@@ -34,7 +34,7 @@ class BinarySearch {
       return Comp::Result(_l, _r);
     }
   };
-  struct GreaterOrEqual {
+  struct LessOrEqual {
     static constexpr bool Result(const T &_l, const T &_r) {
       return !Less::Result(_r, _l);
     }
@@ -48,7 +48,7 @@ class BinarySearch {
 
   template<std::size_t N>
   static constexpr size_t UpperBound(T const (&array)[N], T value) {
-    return PerformSearch(array, value, 0, N, GreaterOrEqual::Result);
+    return PerformSearch(array, value, 0, N, LessOrEqual::Result);
   }
 
  private:

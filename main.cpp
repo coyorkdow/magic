@@ -8,9 +8,9 @@ int main() {
   char show0[Power<2, 10, 998244353>::Calculate()];
   char show1[BinarySearch<int>::LowerBound(arr, 4)];
   char show2[BinarySearch<int>::UpperBound(arr, 4)];
-  static_assert(sizeof(show0) == 1024, "");
-  static_assert(sizeof(show1) == 3, "");
-  static_assert(sizeof(show2) == 5, "");
+  static_assert(Power<2, 10, 998244353>::Calculate() == 1024, "");
+  static_assert(BinarySearch<int>::LowerBound(arr, 4) == 3, "");
+  static_assert(BinarySearch<int>::UpperBound(arr, 4) == 5, "");
   std::cout << sizeof(show0) << ' ' << sizeof(show1) << ' ' << sizeof(show2) << std::endl;
   std::cout << BinarySearch<int>::LowerBound(arr, 5) // expected 5
             << ' ' << BinarySearch<int>::UpperBound(arr, 5) // expected 8
