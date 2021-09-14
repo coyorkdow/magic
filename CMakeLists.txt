@@ -10,4 +10,5 @@ add_executable(magic
         util.h
         quick_power.h
         binary_search.h
-        )
+        index_sequence.h
+        tuple.h)
