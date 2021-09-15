@@ -2,7 +2,8 @@
 // Created by YorkDow Co on 2021/6/10.
 //
 
-#pragma once
+#ifndef MAGIC__BINARY_SEARCH_H_
+#define MAGIC__BINARY_SEARCH_H_
 
 #include "util.h"
 
@@ -16,24 +17,12 @@ struct Comparator {
 template<typename T, class Comp = Comparator<T>>
 class BinarySearch {
 
-//  template<Ptr Begin, Ptr End, T Value>
-//  struct __LowerBound {
-//    using mid = Mid<Begin, End>;
-//    using less = typename Comp::template Less<Value, *mid::result>;
-//    static const Ptr result = IfThenElse<less::result,
-//                                         __LowerBound<Begin + 1, mid::result, Value>,
-//                                         __LowerBound<mid::result, End, Value>>::Result::result;
-//  };
-//  template<typename Pointer<T>::Result End, T Value>
-//  struct __LowerBound<End, End, Value> {
-//    static const typename Pointer<T>::Result result = End;
-//  };
-
   struct Less {
     static constexpr bool Result(const T &_l, const T &_r) {
       return Comp::Result(_l, _r);
     }
   };
+
   struct LessOrEqual {
     static constexpr bool Result(const T &_l, const T &_r) {
       return !Less::Result(_r, _l);
@@ -63,3 +52,5 @@ class BinarySearch {
   };
 #undef MID
 };
+
+#endif // MAGIC__BINARY_SEARCH_H_

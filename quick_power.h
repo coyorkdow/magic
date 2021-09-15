@@ -2,7 +2,8 @@
 // Created by YorkDow Co on 2021/6/7.
 //
 
-#pragma once
+#ifndef MAGIC__QUICK_POWER_H_
+#define MAGIC__QUICK_POWER_H_
 
 #include "util.h"
 
@@ -43,3 +44,5 @@ class Power {
     return Process<1, Base>::result;
   }
 };
+
+#endif // MAGIC__QUICK_POWER_H_
