@@ -5,7 +5,7 @@
 #ifndef MAGIC__INDEX_SEQUENCE_H_
 #define MAGIC__INDEX_SEQUENCE_H_
 
-#include <cstddef>
+namespace magic {
 
 template<size_t ...>
 struct IndexSequence {};
@@ -35,5 +35,7 @@ struct IndexSeqImpl<Begin, Begin> {
 
 template<size_t N>
 using MakeIndexSequence = typename IndexSeqImpl<0, N - 1>::result;
+
+} // magic
 
 #endif //MAGIC__INDEX_SEQUENCE_H_

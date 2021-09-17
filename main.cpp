@@ -5,6 +5,8 @@
 #include "index_sequence.h"
 #include "tuple.h"
 
+using namespace magic;
+
 // https://stackoverflow.com/a/27375675/11139119
 template<typename Arg, typename ...Args>
 void doPrint(std::ostream &out, Arg &&arg, Args &&...args) {
@@ -46,4 +48,7 @@ int main() {
   std::cout << t.Get<1>() << std::endl;
   t.Get<2>() = "string";
   std::cout << t.Get<2>() << std::endl;
+
+  auto tt = MakeTuple(1, "1234", 8.8);
+  std::cout << tt.Get<0>() << ' ' << tt.Get<1>() << ' ' << tt.Get<2>() << std::endl;
 }

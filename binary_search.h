@@ -7,6 +7,8 @@
 
 #include "util.h"
 
+namespace magic {
+
 template<typename T>
 struct Comparator {
   static constexpr bool Result(const T &_l, const T &_r) {
@@ -52,5 +54,7 @@ class BinarySearch {
   };
 #undef MID
 };
+
+} // magic
 
 #endif // MAGIC__BINARY_SEARCH_H_

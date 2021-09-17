@@ -7,8 +7,7 @@
 
 #include "util.h"
 
-#include <cstdint>
-#include <cstddef>
+namespace magic {
 
 template<uint64_t Num>
 struct MaxDigit {
@@ -44,5 +43,7 @@ class Power {
     return Process<1, Base>::result;
   }
 };
+
+}
 
 #endif // MAGIC__QUICK_POWER_H_
