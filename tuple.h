@@ -46,6 +46,11 @@ public:
   template <size_t Index> typename GetElementType<Index>::result &Get() {
     return TupleComponent<Index, typename GetElementType<Index>::result>::value;
   }
+
+  template <class Fn> void ForEach(Fn &&func) {
+    using expander = int[];
+    (void)expander{0, (void(func(Get<IndexSeq>())), 0)...};
+  }
 };
 
 template <typename... Tp>
