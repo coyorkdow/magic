@@ -12,7 +12,8 @@
 
 namespace magic {
 
-template <typename T> struct TypeFieldsScheme;
+template<class Tp>
+struct TypeFieldsScheme;
 
 #define RegisterFields(Tp, ...)                                                \
   template <> struct TypeFieldsScheme<Tp> {                                    \
@@ -24,22 +25,29 @@ template <typename T> struct TypeFieldsScheme;
 
 #define Field(var, type_name) MakeTuple(&Tp_::var, #var, #type_name)
 
-template <typename Tp, class Fn> class MakeHandler {
-public:
+template<class Tp, class Fn>
+class MakeHandler {
+ public:
   explicit MakeHandler(const Tp &v) : var_(v) {}
 
-  template <class Field> void operator()(Field &&field) {
+  template<class Field>
+  void operator()(Field &&field) {
+    static_assert(TupleSize<typename std::decay<Field>::type>::result == 3,
+                  "invalid argument, not a Filed");
     Fn()(var_.*(std::forward<Field>(field).template Get<0>()),
          std::forward<Field>(field).template Get<1>(),
          std::forward<Field>(field).template Get<2>());
   }
 
-private:
+ private:
   const Tp &var_;
 };
 
-template <class Handler> struct ForEachField {
-  template <typename T> void operator()(T &&var) {
+template<class Handler>
+class ForEachField {
+ public:
+  template<class T>
+  void operator()(T &&var) {
     using T_ = typename std::decay<T>::type;
     auto scheme = TypeFieldsScheme<T_>::result();
     scheme.ForEach(MakeHandler<T_, Handler>(var));

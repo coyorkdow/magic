@@ -7,14 +7,17 @@
 
 namespace magic {
 
-template <bool Cond, class Then, class Else> struct IfThenElse;
+template<bool Cond, class Then, class Else>
+struct IfThenElse;
 
-template <class Then, class Else> struct IfThenElse<true, Then, Else> {
-  using Result = Then;
+template<class Then, class Else>
+struct IfThenElse<true, Then, Else> {
+  using result = Then;
 };
 
-template <class Then, class Else> struct IfThenElse<false, Then, Else> {
-  using Result = Else;
+template<class Then, class Else>
+struct IfThenElse<false, Then, Else> {
+  using result = Else;
 };
 
 } // namespace magic

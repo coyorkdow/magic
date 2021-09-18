@@ -11,13 +11,13 @@
 using namespace magic;
 
 // Override std::ostream so that std::cout could print stl container directly.
-template <class T1, class T2>
+template<class T1, class T2>
 inline std::ostream &operator<<(std::ostream &os, const std::pair<T1, T2> &v) {
   os << '{' << v.first << ", " << v.second << '}';
   return os;
 }
 
-template <template <typename... Args> class ContainerT, typename... Args>
+template<template<class ...Args> class ContainerT, class ...Args>
 std::ostream &operator<<(std::ostream &os,
                          const ContainerT<Args...> &container) {
   os << '[';
@@ -33,29 +33,30 @@ std::ostream &operator<<(std::ostream &os,
 }
 
 inline std::ostream &operator<<(std::ostream &os, const std::string &str) {
-  for (const char &c : str)
+  for (const char &c: str)
     os << c;
   return os;
 }
 
 // Help to print IndexSequence
 // Source https://stackoverflow.com/a/27375675/11139119
-template <typename Arg, typename... Args>
+template<class Arg, class ...Args>
 void doPrint(std::ostream &out, Arg &&arg, Args &&...args) {
   out << std::forward<Arg>(arg);
   using expander = int[];
-  (void)expander{0, (void(out << ',' << std::forward<Args>(args)), 0)...};
+  (void) expander{0, (void(out << ',' << std::forward<Args>(args)), 0)...};
 }
 
-template <size_t... N> void TestIndexSequence(IndexSequence<N...>) {
+template<size_t... N>
+void TestIndexSequence(IndexSequence<N...>) {
   doPrint(std::cout, N...);
 }
 
 class A {
-public:
+ public:
   A() : a(15), b(21), vi({1, 2, 3}), vd({1.1, 2.2, 3.3}), s("123_f3") {}
 
-private:
+ private:
   friend class TypeFieldsScheme<A>;
   int a;
   int b;
@@ -68,8 +69,8 @@ RegisterFields(A, Field(vi, std::vector<int>), Field(vd, std::vector<double>),
                Field(s, std::string));
 
 class ReflectHandler {
-public:
-  template <typename T>
+ public:
+  template<typename T>
   void operator()(T &&var, const char *name, const char *type) {
     std::cout << std::fixed << type << ' ' << name << ' ' << var << ' '
               << std::endl;
@@ -111,5 +112,5 @@ int main() {
             << std::endl;
 
   ForEachField<ReflectHandler> iterator;
-  iterator(A());
+  iterator(A{});
 }
