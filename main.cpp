@@ -108,6 +108,9 @@ int main() {
   std::cout << t.Get<2>() << std::endl;
 
   auto tt = MakeTuple(1, "1234", 8.8);
+//  Down cast to TupleComponent and TupleImpl should be forbidden.
+//  TupleComponent<0, int> &tc = tt;
+//  TupleImpl<IndexSequence<0, 1, 2>, int, const char *, double> &c = tt;
   std::cout << tt.Get<0>() << ' ' << tt.Get<1>() << ' ' << tt.Get<2>()
             << std::endl;
 

@@ -11,6 +11,7 @@ namespace magic {
 
 template<size_t Index, class Tp>
 struct TupleComponent {
+ protected:
   Tp value;
   TupleComponent() = default;
   explicit TupleComponent(Tp v) : value(v) {}
@@ -21,7 +22,7 @@ struct TupleImpl;
 
 template<size_t ...IndexSeq, class ...Tp>
 class TupleImpl<IndexSequence<IndexSeq...>, Tp...>
-    : public TupleComponent<IndexSeq, Tp>... {
+    : private TupleComponent<IndexSeq, Tp>... {
 
   template<size_t Begin, size_t Index, class Tp_, class ...Tps_>
   struct IterateElementType {
@@ -39,7 +40,7 @@ class TupleImpl<IndexSequence<IndexSeq...>, Tp...>
     using result = typename IterateElementType<0, Index, Tp...>::result;
   };
 
- public:
+ protected:
   TupleImpl() = default;
 
   template<class ...Up>
@@ -58,13 +59,17 @@ class TupleImpl<IndexSequence<IndexSeq...>, Tp...>
 };
 
 template<class ...Tp>
-class Tuple : public TupleImpl<typename IndexSeqImpl<0, sizeof...(Tp) - 1>::result, Tp...> {
+class Tuple : protected TupleImpl<typename IndexSeqImpl<0, sizeof...(Tp) - 1>::result, Tp...> {
+  using Base = TupleImpl<typename IndexSeqImpl<0, sizeof...(Tp) - 1>::result, Tp...>;
+
  public:
+  using Base::Get;
+  using Base::ForEach;
+
   Tuple() = default;
 
   template<class ...Up>
-  explicit Tuple(Up ...up) :
-      TupleImpl<typename IndexSeqImpl<0, sizeof...(Tp) - 1>::result, Tp...>(up...) {}
+  explicit Tuple(Up ...up) : Base(up...) {}
 };
 
 template<class Tp>
