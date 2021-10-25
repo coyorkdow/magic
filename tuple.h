@@ -47,14 +47,19 @@ class TupleImpl<IndexSequence<IndexSeq...>, Tp...>
   explicit TupleImpl(Up ...up) : TupleComponent<IndexSeq, Tp>(up)... {}
 
   template<size_t Index>
-  typename GetElementType<Index>::result &Get() {
+  const typename GetElementType<Index>::result &Get() const {
     return TupleComponent<Index, typename GetElementType<Index>::result>::value;
+  }
+
+  template<size_t Index>
+  void Set(const typename GetElementType<Index>::result &val) {
+    TupleComponent<Index, typename GetElementType<Index>::result>::value = val;
   }
 
   template<class Fn>
   void ForEach(Fn &&func) {
     using expander = int[];
-    (void) expander{0, (void(func(Get<IndexSeq>())), 0)...};
+    (void) expander{(void(func(Get<IndexSeq>())), 0)...};
   }
 };
 
@@ -64,6 +69,7 @@ class Tuple : protected TupleImpl<typename IndexSeqImpl<0, sizeof...(Tp) - 1>::r
 
  public:
   using Base::Get;
+  using Base::Set;
   using Base::ForEach;
 
   Tuple() = default;
@@ -84,7 +90,7 @@ template<class ...Tp>
 const size_t TupleSize<Tuple<Tp...>>::result = sizeof...(Tp);
 
 template<class ...Tp>
-inline Tuple<typename std::decay<Tp>::type...> MakeTuple(Tp &&...t) {
+inline constexpr Tuple<typename std::decay<Tp>::type...> MakeTuple(Tp &&...t) {
   return Tuple<typename std::decay<Tp>::type...>(std::forward<Tp>(t)...);
 }
 

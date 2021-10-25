@@ -18,12 +18,39 @@ struct TypeFieldsScheme;
 #define RegisterFields(Tp, ...)                                                \
   template <> struct TypeFieldsScheme<Tp> {                                    \
     using Tp_ = Tp;                                                            \
-    static auto result() -> decltype(MakeTuple(__VA_ARGS__)) {                 \
+    static constexpr auto result() -> decltype(MakeTuple(__VA_ARGS__)) {       \
       return MakeTuple(__VA_ARGS__);                                           \
     };                                                                         \
   };
 
 #define Field(var, type_name) MakeTuple(&Tp_::var, #var, #type_name)
+
+template<class Tp>
+class GetFields {
+  using UnifiedField = Tuple<size_t, std::string, std::string>;
+  using ThisFields = UnifiedField[TupleSize<decltype(TypeFieldsScheme<Tp>::result())>::result];
+
+  template<class Field>
+  static UnifiedField HandleField(Field &&field) {
+    Tp *base = nullptr;
+    size_t offset = (char *) &(base->*(std::forward<Field>(field).template Get<0>())) - (char *) base;
+    std::string name = std::forward<Field>(field).template Get<1>();
+    std::string type_name = std::forward<Field>(field).template Get<2>();
+    return MakeTuple(offset, std::move(name), std::move(type_name));
+  }
+
+  template<size_t... N>
+  static const ThisFields& Impl(IndexSequence<N...>) {
+    static auto scheme = TypeFieldsScheme<Tp>::result();
+    static const ThisFields expander = {HandleField(scheme.template Get<N>())...};
+    return expander;
+  }
+
+ public:
+  static const ThisFields& result() {
+    return Impl(MakeIndexSequence<TupleSize<decltype(TypeFieldsScheme<Tp>::result())>::result>());
+  }
+};
 
 template<class Tp, class Fn>
 class MakeHandler {
