@@ -50,7 +50,7 @@ class ForEachField {
   void operator()(T &&var) {
     using T_ = typename std::decay<T>::type;
     auto scheme = TypeFieldsScheme<T_>::result();
-    scheme.ForEach(MakeHandler<T_, Handler>(var));
+    scheme.ForEach(MakeHandler<T_, Handler>(static_cast<T_>(var)));
   };
 };
 

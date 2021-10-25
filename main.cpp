@@ -99,13 +99,12 @@ int main() {
             << ' ' << BinarySearch<int>::UpperBound(arr, 0); // expected 0
   std::cout << std::endl;
 
-  Tuple<int, double, std::string> t;
+  Tuple<int, double, std::string> t(1, 1.2, "11.2");
+  std::cout << t.Get<0>() << ' ' << t.Get<1>() << ' ' << t.Get<2>() << std::endl;
   t.Get<0>() = 15;
-  std::cout << t.Get<0>() << std::endl;
   t.Get<1>() = 89.64;
-  std::cout << t.Get<1>() << std::endl;
   t.Get<2>() = "string";
-  std::cout << t.Get<2>() << std::endl;
+  std::cout << t.Get<0>() << ' ' << t.Get<1>() << ' ' << t.Get<2>() << std::endl;
 
   auto tt = MakeTuple(1, "1234", 8.8);
 //  Down cast to TupleComponent and TupleImpl should be forbidden.
