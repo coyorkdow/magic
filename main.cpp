@@ -49,7 +49,9 @@ void doPrint(std::ostream &out, Arg &&arg, Args &&...args) {
 
 template<size_t... N>
 void TestIndexSequence(IndexSequence<N...>) {
-  doPrint(std::cout, N...);
+  static const size_t seq[] = {N...};
+  for (auto each: seq) std::cout << each << ' ';
+  std::cout << std::endl;
 }
 
 class A {
@@ -82,37 +84,67 @@ int main() {
   char show0[Power<2, 10, 998244353>::Calculate()];
   char show1[BinarySearch<int>::LowerBound(arr, 4)];
   char show2[BinarySearch<int>::UpperBound(arr, 4)];
+  static_assert(sizeof(show0) == 1024, "");
+  static_assert(sizeof(show1) == 3, "");
+  static_assert(sizeof(show2) == 5, "");
   static_assert(Power<3, 20, 998244353>::Calculate() == 492051342, "");
+
   static_assert(BinarySearch<int>::LowerBound(arr, 4) == 3, "");
   static_assert(BinarySearch<int>::UpperBound(arr, 4) == 5, "");
-  std::cout << sizeof(show0) << ' ' << sizeof(show1) << ' ' << sizeof(show2)
-            << std::endl;
-  std::cout << BinarySearch<int>::LowerBound(arr, 5)         // expected 5
-            << ' ' << BinarySearch<int>::UpperBound(arr, 5)  // expected 8
-            << ' ' << BinarySearch<int>::LowerBound(arr, 7)  // expected 9
-            << ' ' << BinarySearch<int>::UpperBound(arr, 7)  // expected 10
-            << ' ' << BinarySearch<int>::LowerBound(arr, 8)  // expected 10
-            << ' ' << BinarySearch<int>::UpperBound(arr, 8)  // expected 10
-            << ' ' << BinarySearch<int>::LowerBound(arr, 1)  // expected 0
-            << ' ' << BinarySearch<int>::UpperBound(arr, 1)  // expected 1
-            << ' ' << BinarySearch<int>::LowerBound(arr, 0)  // expected 0
-            << ' ' << BinarySearch<int>::UpperBound(arr, 0); // expected 0
-  std::cout << std::endl;
+  static_assert(BinarySearch<int>::LowerBound(arr, 5) == 5, "");
+  static_assert(BinarySearch<int>::UpperBound(arr, 5) == 8, "");
+  static_assert(BinarySearch<int>::LowerBound(arr, 7) == 9, "");
+  static_assert(BinarySearch<int>::UpperBound(arr, 7) == 10, "");
+  static_assert(BinarySearch<int>::LowerBound(arr, 8) == 10, "");
+  static_assert(BinarySearch<int>::UpperBound(arr, 8) == 10, "");
+  static_assert(BinarySearch<int>::LowerBound(arr, 1) == 0, "");
+  static_assert(BinarySearch<int>::UpperBound(arr, 1) == 1, "");
+  static_assert(BinarySearch<int>::LowerBound(arr, 0) == 0, "");
+  static_assert(BinarySearch<int>::UpperBound(arr, 0) == 0, "");
+
+  using std::begin;
+  using std::end;
+#define all(x) begin(x), end(x)
+  assert(BinarySearch<int>::LowerBound(arr, 4) == std::lower_bound(all(arr), 4) - begin(arr));
+  assert(BinarySearch<int>::UpperBound(arr, 4) == std::upper_bound(all(arr), 4) - begin(arr));
+  assert(BinarySearch<int>::LowerBound(arr, 5) == std::lower_bound(all(arr), 5) - begin(arr));
+  assert(BinarySearch<int>::UpperBound(arr, 5) == std::upper_bound(all(arr), 5) - begin(arr));
+  assert(BinarySearch<int>::LowerBound(arr, 7) == std::lower_bound(all(arr), 7) - begin(arr));
+  assert(BinarySearch<int>::UpperBound(arr, 7) == std::upper_bound(all(arr), 7) - begin(arr));
+  assert(BinarySearch<int>::LowerBound(arr, 8) == std::lower_bound(all(arr), 8) - begin(arr));
+  assert(BinarySearch<int>::UpperBound(arr, 8) == std::upper_bound(all(arr), 8) - begin(arr));
+  assert(BinarySearch<int>::LowerBound(arr, 1) == std::lower_bound(all(arr), 1) - begin(arr));
+  assert(BinarySearch<int>::UpperBound(arr, 1) == std::upper_bound(all(arr), 1) - begin(arr));
+  assert(BinarySearch<int>::LowerBound(arr, 0) == std::lower_bound(all(arr), 0) - begin(arr));
+  assert(BinarySearch<int>::UpperBound(arr, 0) == std::upper_bound(all(arr), 0) - begin(arr));
+
+  TestIndexSequence(MakeIndexSequence<10>());
 
   Tuple<int, double, std::string> t(1, 1.2, "11.2");
-  std::cout << t.Get<0>() << ' ' << t.Get<1>() << ' ' << t.Get<2>() << std::endl;
-  t.Get<0>() = 15;
-  t.Get<1>() = 89.64;
-  t.Get<2>() = "string";
-  std::cout << t.Get<0>() << ' ' << t.Get<1>() << ' ' << t.Get<2>() << std::endl;
+  static_assert(TupleSize<decltype(t)>::result == 3, "");
+  assert(t.Get<0>() == 1);
+  assert(t.Get<1>() == 1.2);
+  assert(t.Get<2>() == "11.2");
+
+  t.Set<0>(15);
+  t.Set<1>(89.64);
+  t.Set<2>("string");
+  assert(t.Get<0>() == 15);
+  assert(t.Get<1>() == 89.64);
+  assert(t.Get<2>() == "string");
 
   auto tt = MakeTuple(1, "1234", 8.8);
 //  Down cast to TupleComponent and TupleImpl should be forbidden.
 //  TupleComponent<0, int> &tc = tt;
 //  TupleImpl<IndexSequence<0, 1, 2>, int, const char *, double> &c = tt;
-  std::cout << tt.Get<0>() << ' ' << tt.Get<1>() << ' ' << tt.Get<2>()
-            << std::endl;
+  assert(tt.Get<0>() == 1);
+  assert(tt.Get<1>() == "1234");
+  assert(tt.Get<2>() == 8.8);
 
   ForEachField<ReflectHandler> iterator;
   iterator(A{});
+  auto &fields = GetFields<A>::result();
+  for (auto &each: fields) {
+    std::cout << each.Get<1>() << ' ' << each.Get<2>() << std::endl;
+  }
 }
