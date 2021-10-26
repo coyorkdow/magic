@@ -17,16 +17,18 @@ template<class T> using decay_t = typename std::decay<T>::type;
 template<class Tp>
 class TypeFieldsScheme;
 
-#define RegisterFields(Tp, ...)                                                \
-  template <> class TypeFieldsScheme<Tp> {                                     \
-    using Tp_ = Tp;                                                            \
-    using rT_ = std::remove_reference<decltype(MakeTuple(__VA_ARGS__))>::type; \
-   public:                                                                     \
-    static constexpr rT_ result = MakeTuple(__VA_ARGS__);                      \
-    static constexpr auto name = #Tp;                                          \
-    static constexpr size_t size = MakeTuple(__VA_ARGS__).size();              \
-  };                                                                           \
-  constexpr typename TypeFieldsScheme<Tp>::rT_ TypeFieldsScheme<Tp>::result;
+#define RegisterFields(Tp, ...)                                                  \
+  namespace magic {                                                              \
+    template <> class TypeFieldsScheme<Tp> {                                     \
+      using Tp_ = Tp;                                                            \
+      using rT_ = std::remove_reference<decltype(MakeTuple(__VA_ARGS__))>::type; \
+    public:                                                                      \
+      static constexpr rT_ result = MakeTuple(__VA_ARGS__);                      \
+      static constexpr auto name = #Tp;                                          \
+      static constexpr size_t size = MakeTuple(__VA_ARGS__).size();              \
+    };                                                                           \
+    constexpr typename TypeFieldsScheme<Tp>::rT_ TypeFieldsScheme<Tp>::result;   \
+  }
 
 #define Field(var, type_name) MakeTuple(&Tp_::var, #var, #type_name)
 
