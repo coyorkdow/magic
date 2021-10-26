@@ -151,6 +151,8 @@ int main() {
 
   A a;
   static_assert(TypeFieldsScheme<A>::size == 3, "");
+  assert(IsReflectable(a) == true);
+  assert(IsReflectable(tt) == false);
   std::cout << NameOf(a) << std::endl;
   std::cout << ValueOf<0>(a) << ' ' << ValueOf<1>(a) << ' ' << ValueOf<2>(a) << std::endl;
   std::cout << NameOf<0>(a) << ' ' << NameOf<1>(a) << ' ' << NameOf<2>(a) << std::endl;
