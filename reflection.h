@@ -132,8 +132,9 @@ class MakeHandler {
 
   template<class Field>
   void operator()(Field &&field) {
-    static_assert(typename std::decay<Field>::type().size() == 3,
-                  "invalid argument, not a Filed");
+//    static_assert(typename std::decay<Field>::type().size() == 3,
+//                  "invalid argument, not a Filed");
+    static_assert(TupleSize<decay_t<Field>>::result == 3, "invalid argument, not a Filed");
     Fn()(var_.*std::forward<Field>(field).template Get<0>(),
          std::forward<Field>(field).template Get<1>(),
          std::forward<Field>(field).template Get<2>());
