@@ -14,6 +14,9 @@ namespace magic {
 
 template<class T> using decay_t = typename std::decay<T>::type;
 
+template<class T>
+struct IsReflectableType : public std::false_type {};
+
 template<class Tp>
 class TypeFieldsScheme;
 
@@ -28,9 +31,16 @@ class TypeFieldsScheme;
       static constexpr size_t size = MakeTuple(__VA_ARGS__).size();              \
     };                                                                           \
     constexpr typename TypeFieldsScheme<Tp>::rT_ TypeFieldsScheme<Tp>::result;   \
+                                                                                 \
+    template<> struct IsReflectableType<Tp> : public std::true_type {};          \
   }
 
 #define Field(var, type_name) MakeTuple(&Tp_::var, #var, #type_name)
+
+template<class Tp>
+inline bool IsReflectable(Tp &&val) {
+  return IsReflectableType<decay_t<Tp>>();
+}
 
 using UnifiedField = Tuple<size_t, std::string, std::string>;
 
@@ -56,7 +66,8 @@ class AllFields {
   void Set(size_t ind, Val &&v) {
     assert(ind < size());
     using ValTp = decay_t<Val>;
-    auto ptr = reinterpret_cast<ValTp*>(reinterpret_cast<char *>(&val_) + res_[ind].template Get<0>());
+    auto ptr =
+        reinterpret_cast<ValTp *>(reinterpret_cast<char *>(&val_) + res_[ind].template Get<0>());
     *ptr = v;
   }
 
