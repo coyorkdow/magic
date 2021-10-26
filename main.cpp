@@ -128,7 +128,8 @@ int main() {
   TestIndexSequence(MakeIndexSequence<10>());
 
   Tuple<int, double, std::string> t(1, 1.2, "11.2");
-  static_assert(t.size() == 3, "");
+//  static_assert(t.size() == 3, ""); // can not compile with gcc
+  assert(t.size() == 3);
   assert(t.Get<0>() == 1);
   assert(t.Get<1>() == 1.2);
   assert(t.Get<2>() == "11.2");
