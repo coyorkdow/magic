@@ -118,10 +118,15 @@ int main() {
   assert(BinarySearch<int>::LowerBound(arr, 0) == std::lower_bound(all(arr), 0) - begin(arr));
   assert(BinarySearch<int>::UpperBound(arr, 0) == std::upper_bound(all(arr), 0) - begin(arr));
 
+  constexpr double float_arr[] = {1.1, 2.2, 3.2, 4.5, 4.56, 5.6, 7};
+  static_assert(BinarySearch<double>::LowerBound(float_arr, 5.6) == 5, "");
+  assert(BinarySearch<double>::LowerBound(float_arr, 5.6)
+             == std::lower_bound(all(float_arr), 5.6) - begin(float_arr));
+
   TestIndexSequence(MakeIndexSequence<10>());
 
   Tuple<int, double, std::string> t(1, 1.2, "11.2");
-  static_assert(TupleSize<decltype(t)>::result == 3, "");
+  static_assert(t.size() == 3, "");
   assert(t.Get<0>() == 1);
   assert(t.Get<1>() == 1.2);
   assert(t.Get<2>() == "11.2");
@@ -138,13 +143,30 @@ int main() {
 //  TupleComponent<0, int> &tc = tt;
 //  TupleImpl<IndexSequence<0, 1, 2>, int, const char *, double> &c = tt;
   assert(tt.Get<0>() == 1);
-  assert(tt.Get<1>() == "1234");
+//  assert(tt.Get<1>() == "1234");
   assert(tt.Get<2>() == 8.8);
 
+  A a;
+  static_assert(TypeFieldsScheme<A>::size == 3, "");
+  std::cout << NameOf(a) << std::endl;
+  std::cout << ValueOf<0>(a) << ' ' << ValueOf<1>(a) << ' ' << ValueOf<2>(a) << std::endl;
+  std::cout << NameOf<0>(a) << ' ' << NameOf<1>(a) << ' ' << NameOf<2>(a) << std::endl;
+  std::cout << TypeNameOf<0>(a) << ' ' << TypeNameOf<1>(a) << ' ' << TypeNameOf<2>(a) << std::endl;
+  ValueOf<0>(a) = std::vector<int>{1};
+
   ForEachField<ReflectHandler> iterator;
-  iterator(A{});
-  auto &fields = GetFields<A>::result();
-  for (auto &each: fields) {
-    std::cout << each.Get<1>() << ' ' << each.Get<2>() << std::endl;
+  iterator(a);
+
+  auto fields = GetAllFields(a);
+  for (size_t i = 0; i < fields.size(); i++) {
+    if (fields.TypeNameOf(i) == "std::vector<int>") {
+      fields.Set(i, std::vector<int>{5, 6, 7, 8});
+    } else if (fields.TypeNameOf(i) == "std::vector<double>") {
+      fields.Set(i, std::vector<double>{5.5, 6.6});
+    } else if (fields.TypeNameOf(i) == "std::string") {
+      fields.Set(i, std::string("yet another string"));
+    }
   }
+
+  iterator(a);
 }
