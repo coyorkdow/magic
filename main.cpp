@@ -155,7 +155,7 @@ int main() {
   ValueOf<0>(a) = std::vector<int>{1};
 
   ForEachField<ReflectHandler> iterator;
-  iterator(a);
+  iterator.Iterate(a);
 
   auto fields = GetAllFields(a);
   for (size_t i = 0; i < fields.size(); i++) {
@@ -168,5 +168,5 @@ int main() {
     }
   }
 
-  iterator(a);
+  iterator.Iterate(a);
 }

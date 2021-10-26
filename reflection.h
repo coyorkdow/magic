@@ -145,7 +145,7 @@ template<class Handler>
 class ForEachField {
  public:
   template<class T>
-  void operator()(T &&var) {
+  void Iterate(T &&var) {
     using T_ = decay_t<T>;
     auto scheme = TypeFieldsScheme<T_>::result;
     scheme.ForEach(MakeHandler<T_, Handler>(static_cast<T_>(var)));
