@@ -13,8 +13,8 @@ template<size_t Index, class Tp>
 struct TupleComponent {
  protected:
   Tp value;
-  TupleComponent() = default;
-  explicit TupleComponent(Tp v) : value(v) {}
+  constexpr TupleComponent() = default;
+  constexpr explicit TupleComponent(Tp v) : value(v) {}
 };
 
 template<class Index, class ...Tp>
@@ -41,10 +41,10 @@ class TupleImpl<IndexSequence<IndexSeq...>, Tp...>
   };
 
  protected:
-  TupleImpl() = default;
+  constexpr TupleImpl() = default;
 
   template<class ...Up>
-  explicit TupleImpl(Up ...up) : TupleComponent<IndexSeq, Tp>(up)... {}
+  constexpr explicit TupleImpl(Up ...up) : TupleComponent<IndexSeq, Tp>(up)... {}
 
   template<size_t Index>
   const typename GetElementType<Index>::result &Get() const {
@@ -72,10 +72,12 @@ class Tuple : protected TupleImpl<typename IndexSeqImpl<0, sizeof...(Tp) - 1>::r
   using Base::Set;
   using Base::ForEach;
 
-  Tuple() = default;
+  constexpr Tuple() = default;
 
   template<class ...Up>
-  explicit Tuple(Up ...up) : Base(up...) {}
+  constexpr explicit Tuple(Up ...up) : Base(up...) {}
+
+  inline constexpr size_t size() const noexcept { return sizeof...(Tp); }
 };
 
 template<class Tp>
