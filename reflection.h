@@ -68,7 +68,7 @@ class AllFields {
     *ptr = v;
   }
 
-  constexpr size_t size() const noexcept { return TypeFieldsScheme<Tp>::result.size(); }
+  constexpr size_t size() const noexcept { return AllFields<Tp>::size_; }
 
  private:
   template<class T_>
@@ -76,7 +76,10 @@ class AllFields {
 
   explicit AllFields(Tp &val) : val_(val) {}
 
-  using UnifiedFields = UnifiedField[TypeFieldsScheme<Tp>::result.size()];
+  static constexpr size_t size_ = TypeFieldsScheme<Tp>::result.size();
+
+  using UnifiedFields = UnifiedField[size_];
+
   static const UnifiedFields &res_;
 
   template<class TupleField>
