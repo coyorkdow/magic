@@ -37,10 +37,7 @@ class TypeFieldsScheme;
 
 #define Field(var, type_name) MakeTuple(&Tp_::var, #var, #type_name)
 
-template<class Tp>
-inline bool IsReflectable(Tp &&val) {
-  return IsReflectableType<decay_t<Tp>>();
-}
+#define IsReflectable(val) IsReflectableType<decay_t<decltype(val)>>()
 
 using UnifiedField = Tuple<size_t, std::string, std::string>;
 
