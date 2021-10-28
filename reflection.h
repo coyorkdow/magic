@@ -9,6 +9,7 @@
 #include <type_traits>
 
 #include "tuple.h"
+#include "name_of.h"
 
 namespace magic {
 
@@ -35,7 +36,7 @@ class TypeFieldsScheme;
     template<> struct IsReflectableType<Tp> : public std::true_type {};          \
   }
 
-#define Field(var, type_name) MakeTuple(&Tp_::var, #var, #type_name)
+#define Field(var, tag) MakeTuple(&Tp_::var, #var, #tag)
 
 #define IsReflectable(val) IsReflectableType<decay_t<decltype(val)>>()
 
@@ -54,7 +55,7 @@ class AllFields {
     return res_[ind].template Get<1>();
   }
 
-  const std::string &TypeNameOf(size_t ind) const {
+  const std::string &TagOf(size_t ind) const {
     assert(ind < size());
     return res_[ind].template Get<2>();
   }
@@ -127,7 +128,13 @@ auto NameOf(T &&val) -> decltype(GetField<Index>(std::forward<T>(val)).template 
 }
 
 template<size_t Index, class T>
-auto TypeNameOf(T &&val) -> decltype(GetField<Index>(std::forward<T>(val)).template Get<2>()) {
+std::string TypeNameOf(T &&val) {
+  using rT = decltype(val.*GetField<Index>(std::forward<T>(val)).template Get<0>());
+  return Type<typename std::remove_reference<rT>::type>::m.name();
+}
+
+template<size_t Index, class T>
+auto TagOf(T &&val) -> decltype(GetField<Index>(std::forward<T>(val)).template Get<2>()) {
   return GetField<Index>(std::forward<T>(val)).template Get<2>();
 }
 

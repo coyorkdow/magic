@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cassert>
 #include <iostream>
+#include <iomanip>
 #include <string>
 #include <vector>
 
@@ -69,15 +70,15 @@ class A {
   std::string s;
 };
 
-RegisterFields(A, Field(vi, std::vector<int>), Field(vd, std::vector<double>),
-               Field(s, std::string));
+RegisterFields(A, Field(vi, vi tag), Field(vd, vd tag), Field(s, s tag));
 
 class ReflectHandler {
  public:
   template<typename T>
-  void operator()(T &&var, const char *name, const char *type) {
-    std::cout << std::fixed << type << ' ' << name << ' ' << var << ' '
-              << std::endl;
+  void operator()(T &&var, const char *name, const char *tag) {
+    std::cout << "tag: " << std::setw(8) << tag;
+    std::cout << "│name: " << std::setw(8) << name;
+    std::cout << "│value: " << var << '\n';
   }
 };
 
@@ -164,14 +165,32 @@ int main() {
 
   auto fields = GetAllFields(a);
   for (size_t i = 0; i < fields.size(); i++) {
-    if (fields.TypeNameOf(i) == "std::vector<int>") {
+    if (fields.TagOf(i) == "vi tag") {
       fields.Set(i, std::vector<int>{5, 6, 7, 8});
-    } else if (fields.TypeNameOf(i) == "std::vector<double>") {
+    } else if (fields.TagOf(i) == "vd tag") {
       fields.Set(i, std::vector<double>{5.5, 6.6});
-    } else if (fields.TypeNameOf(i) == "std::string") {
+    } else if (fields.TagOf(i) == "s tag") {
       fields.Set(i, std::string("yet another string"));
     }
   }
 
   iterator.Iterate(a);
+
+  std::vector<std::map<std::pair<int,std::string>, uint64_t>> testv;
+  const Any *meta = &Type<decltype(testv)>::m;
+  std::cout << std::endl << "type of testv is " << meta->name();
+  std::cout << std::endl << "type of stored in testv is " << meta->first_stored->name();
+  meta = meta->first_stored;
+  std::cout << std::endl << "type of key of map is " << meta->first_stored->name();
+  std::cout << std::endl << "type of val of map is " << meta->second_stored->name();
+  meta = meta->first_stored;
+  std::cout << std::endl << "type of first of pair is " << meta->first_stored->name();
+  std::cout << std::endl << "type of second of pair is " << meta->second_stored->name();
+
+
+  std::array<std::vector<const int*>, 10> testa[5];
+  std::cout << std::endl << "type of testa is " << Type<decltype(testa)>::m.name();
+
+  auto &&testaref = &testa;
+  std::cout << std::endl << "type of testaref is " << Type<decltype(testaref)>::m.name();
 }
