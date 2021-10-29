@@ -59,18 +59,23 @@ void TestIndexSequence(IndexSequence<N...>) {
 
 class A {
  public:
-  A() : a(15), b(21), vi({1, 2, 3}), vd({1.1, 2.2, 3.3}), s("123_f3") {}
+  A() : f(0.5), pf(new float{14.5}), vi({1, 2, 3}), vd({1.1, 2.2, 3.3}), s("123_f3") {}
 
  private:
   friend class TypeFieldsScheme<A>;
-  int a;
-  int b;
+  float f;
+  float *pf;
   std::vector<int> vi;
   std::vector<double> vd;
   std::string s;
 };
 
-RegisterFields(A, Field(vi, vi tag), Field(vd, vd tag), Field(s, s tag));
+RegisterFields(A,
+               Field(vi, vi tag),
+               Field(vd, vd tag),
+               Field(s, s tag),
+               FieldNoTag(f),
+               FieldNoTag(pf));
 
 class ReflectHandler {
  public:
@@ -79,6 +84,11 @@ class ReflectHandler {
     std::cout << "tag: " << std::setw(8) << tag;
     std::cout << "│name: " << std::setw(8) << name;
     std::cout << "│value: " << var << '\n';
+  }
+  void operator()(float *var, const char *name, const char *tag) {
+    std::cout << "tag: " << std::setw(8) << tag;
+    std::cout << "│name: " << std::setw(8) << name;
+    std::cout << "│value: " << *var << '\n';
   }
 };
 
@@ -151,7 +161,7 @@ int main() {
   assert(tt.Get<2>() == 8.8);
 
   A a;
-  static_assert(TypeFieldsScheme<A>::size == 3, "");
+  static_assert(TypeFieldsScheme<A>::size == 5, "");
   static_assert(IsReflectable(a) == true, "");
   static_assert(IsReflectable(tt) == false, "");
   std::cout << NameOf(a) << std::endl;
@@ -162,22 +172,42 @@ int main() {
 
   ForEachField<ReflectHandler> iterator;
   iterator.Iterate(a);
+  std::cout << std::endl;
 
   auto fields = GetAllFields(a);
   for (size_t i = 0; i < fields.size(); i++) {
-    if (fields.TagOf(i) == "vi tag") {
-      fields.Set(i, std::vector<int>{5, 6, 7, 8});
-    } else if (fields.TagOf(i) == "vd tag") {
-      fields.Set(i, std::vector<double>{5.5, 6.6});
-    } else if (fields.TagOf(i) == "s tag") {
-      fields.Set(i, std::string("yet another string"));
+    auto typeinfo = fields.TypeOf(i);
+    switch (typeinfo->id()) {
+      case NameEnum::Float:
+        if (typeinfo->ptr_cnt() == 0) {
+          fields.Set(i, (float) 99);
+        } else if (typeinfo->ptr_cnt() == 1) {
+          float *ptr = *reinterpret_cast<float **>(fields.PtrOf(i));
+          *ptr = 100;
+        }
+        break;
+      case NameEnum::STD_Vector:
+        switch (typeinfo->first_stored->id()) {
+          case NameEnum::Int:
+            fields.Set(i, std::vector<int>{5, 6, 7, 8});
+            break;
+          case NameEnum::
+            Double:fields.Set(i, std::vector<double>{5.5, 6.6});
+            break;
+          default:;
+        }
+        break;
+      case NameEnum::STD_String:
+        fields.Set(i, std::string("yet another string"));
+        break;
+      default:;
     }
   }
 
   iterator.Iterate(a);
 
-  std::vector<std::map<std::pair<int,std::string>, uint64_t>> testv;
-  const Any *meta = &Type<decltype(testv)>::m;
+  std::vector<std::map<std::pair<volatile const int *, std::string>, uint64_t>> testv;
+  const Any *meta = &TypeInfo<decltype(testv)>::info;
   std::cout << std::endl << "type of testv is " << meta->name();
   std::cout << std::endl << "type of stored in testv is " << meta->first_stored->name();
   meta = meta->first_stored;
@@ -187,10 +217,11 @@ int main() {
   std::cout << std::endl << "type of first of pair is " << meta->first_stored->name();
   std::cout << std::endl << "type of second of pair is " << meta->second_stored->name();
 
-
-  std::array<std::vector<const int*>, 10> testa[5];
-  std::cout << std::endl << "type of testa is " << Type<decltype(testa)>::m.name();
+  std::array<std::vector<const int *>, 10> testa[5];
+  meta = &TypeInfo<decltype(testa)>::info;
+  std::cout << std::endl << "type of testa is " << meta->name();
 
   auto &&testaref = &testa;
-  std::cout << std::endl << "type of testaref is " << Type<decltype(testaref)>::m.name();
+  meta = &TypeInfo<decltype(testaref)>::info;
+  std::cout << std::endl << "type of testaref is " << meta->name();
 }
