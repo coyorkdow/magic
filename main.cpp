@@ -1,7 +1,7 @@
 #include <algorithm>
 #include <cassert>
-#include <iostream>
 #include <iomanip>
+#include <iostream>
 #include <string>
 #include <vector>
 
@@ -20,7 +20,7 @@ inline std::ostream &operator<<(std::ostream &os, const std::pair<T1, T2> &v) {
   return os;
 }
 
-template<template<class ...Args> class ContainerT, class ...Args>
+template<template<class... Args> class ContainerT, class... Args>
 std::ostream &operator<<(std::ostream &os,
                          const ContainerT<Args...> &container) {
   os << '[';
@@ -36,14 +36,14 @@ std::ostream &operator<<(std::ostream &os,
 }
 
 inline std::ostream &operator<<(std::ostream &os, const std::string &str) {
-  for (const char &c: str)
+  for (const char &c : str)
     os << c;
   return os;
 }
 
 // Help to print IndexSequence
 // Source https://stackoverflow.com/a/27375675/11139119
-template<class Arg, class ...Args>
+template<class Arg, class... Args>
 void doPrint(std::ostream &out, Arg &&arg, Args &&...args) {
   out << std::forward<Arg>(arg);
   using expander = int[];
@@ -53,13 +53,17 @@ void doPrint(std::ostream &out, Arg &&arg, Args &&...args) {
 template<size_t... N>
 void TestIndexSequence(IndexSequence<N...>) {
   static const size_t seq[] = {N...};
-  for (auto each: seq) std::cout << each << ' ';
+  for (auto each : seq) std::cout << each << ' ';
   std::cout << std::endl;
 }
 
 class A {
  public:
-  A() : f(0.5), pf(new float{14.5}), vi({1, 2, 3}), vd({1.1, 2.2, 3.3}), s("123_f3") {}
+  A() : f(0.5),
+        pf(new float{14.5}),
+        vi({1, 2, 3}),
+        vd({1.1, 2.2, 3.3}),
+        s("123_f3") {}
 
  private:
   friend class TypeFieldsScheme<A>;
@@ -134,12 +138,12 @@ int main() {
   constexpr double float_arr[] = {1.1, 2.2, 3.2, 4.5, 4.56, 5.6, 7};
   static_assert(BinarySearch<double>::LowerBound(float_arr, 5.6) == 5, "");
   assert(BinarySearch<double>::LowerBound(float_arr, 5.6)
-             == std::lower_bound(all(float_arr), 5.6) - begin(float_arr));
+         == std::lower_bound(all(float_arr), 5.6) - begin(float_arr));
 
   TestIndexSequence(MakeIndexSequence<10>());
 
   Tuple<int, double, std::string> t(1, 1.2, "11.2");
-//  static_assert(t.size() == 3, ""); // can not compile with gcc
+  //  static_assert(t.size() == 3, ""); // can not compile with gcc
   assert(t.size() == 3);
   assert(t.Get<0>() == 1);
   assert(t.Get<1>() == 1.2);
@@ -153,11 +157,11 @@ int main() {
   assert(t.Get<2>() == "string");
 
   auto tt = MakeTuple(1, "1234", 8.8);
-//  Down cast to TupleComponent and TupleImpl should be forbidden.
-//  TupleComponent<0, int> &tc = tt;
-//  TupleImpl<IndexSequence<0, 1, 2>, int, const char *, double> &c = tt;
+  //  Down cast to TupleComponent and TupleImpl should be forbidden.
+  //  TupleComponent<0, int> &tc = tt;
+  //  TupleImpl<IndexSequence<0, 1, 2>, int, const char *, double> &c = tt;
   assert(tt.Get<0>() == 1);
-//  assert(tt.Get<1>() == "1234");
+  //  assert(tt.Get<1>() == "1234");
   assert(tt.Get<2>() == 8.8);
 
   A a;
@@ -179,20 +183,21 @@ int main() {
     auto typeinfo = fields.TypeOf(i);
     switch (typeinfo->id()) {
       case NameEnum::Float:
-        if (typeinfo->ptr_cnt() == 0) {
+        if (typeinfo->PointerLevels() == 0) {
           fields.Set(i, (float) 99);
-        } else if (typeinfo->ptr_cnt() == 1) {
+        } else if (typeinfo->PointerLevels() == 1) {
           float *ptr = *reinterpret_cast<float **>(fields.PtrOf(i));
           *ptr = 100;
         }
         break;
       case NameEnum::STD_Vector:
-        switch (typeinfo->first_stored->id()) {
+        switch (typeinfo->first()->id()) {
           case NameEnum::Int:
             fields.Set(i, std::vector<int>{5, 6, 7, 8});
             break;
           case NameEnum::
-            Double:fields.Set(i, std::vector<double>{5.5, 6.6});
+              Double:
+            fields.Set(i, std::vector<double>{5.5, 6.6});
             break;
           default:;
         }
@@ -206,22 +211,37 @@ int main() {
 
   iterator.Iterate(a);
 
+  using base = const volatile int;
+  const Any *meta = &TypeInfo<base>::info;
+  assert(meta->name() == "const volatile int");
+  using wrap1 = base *;
+  meta = &TypeInfo<wrap1>::info;
+  assert(meta->name() == "const volatile int*");
+  using wrap2 = const wrap1 **;
+  meta = &TypeInfo<wrap2>::info;
+  assert(meta->name() == "const volatile int*const**");
+  using wrap3 = volatile wrap2;
+  meta = &TypeInfo<wrap3>::info;
+  assert(meta->name() == "const volatile int*const**volatile");
+
   std::vector<std::map<std::pair<volatile const int *, std::string>, uint64_t>> testv;
-  const Any *meta = &TypeInfo<decltype(testv)>::info;
-  std::cout << std::endl << "type of testv is " << meta->name();
-  std::cout << std::endl << "type of stored in testv is " << meta->first_stored->name();
-  meta = meta->first_stored;
-  std::cout << std::endl << "type of key of map is " << meta->first_stored->name();
-  std::cout << std::endl << "type of val of map is " << meta->second_stored->name();
-  meta = meta->first_stored;
-  std::cout << std::endl << "type of first of pair is " << meta->first_stored->name();
-  std::cout << std::endl << "type of second of pair is " << meta->second_stored->name();
+  meta = &TypeInfo<decltype(testv)>::info;
+  assert(meta->name() == "std::vector<std::map<std::pair<const volatile int*,std::string>,unsigned long long>>");
+  assert(meta->first()->name() == "std::map<std::pair<const volatile int*,std::string>,unsigned long long>");
 
-  std::array<std::vector<const int *>, 10> testa[5];
+  meta = meta->first();
+  assert(meta->first()->name() == "std::pair<const volatile int*,std::string>");
+  assert(meta->second()->name() == "unsigned long long");
+
+  meta = meta->first();
+  assert(meta->first()->name() == "const volatile int*");
+  assert(meta->second()->name() == "std::string");
+
+  std::vector<std::array<char[2], 10>> testa[5];
   meta = &TypeInfo<decltype(testa)>::info;
-  std::cout << std::endl << "type of testa is " << meta->name();
+  assert(meta->name() == "std::vector<std::array<char[2],10>>[5]");
 
-  auto &&testaref = &testa;
+  const volatile auto &&testaref = &testa;
   meta = &TypeInfo<decltype(testaref)>::info;
-  std::cout << std::endl << "type of testaref is " << meta->name();
+  assert(meta->name() == "const volatile std::vector<std::array<char[2],10>>[5]*&");
 }
