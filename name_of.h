@@ -5,16 +5,16 @@
 #ifndef MAGIC__NAME_OF_H_
 #define MAGIC__NAME_OF_H_
 
-#include <utility>
-#include <vector>
 #include <array>
-#include <queue>
 #include <deque>
 #include <map>
-#include <unordered_map>
+#include <queue>
 #include <set>
-#include <unordered_set>
 #include <string>
+#include <unordered_map>
+#include <unordered_set>
+#include <utility>
+#include <vector>
 
 namespace magic {
 
@@ -50,60 +50,93 @@ enum NameEnum {
 
 class Any {
  public:
-  Any() = default;
-  Any(NameEnum id,
-      std::string (*name)(),
-      int ptr_cnt = 0,
-      int ref_type = 0,
-      int cv_qualifier = 0,
-      size_t size = 0,
-      const Any *first_stored = nullptr,
-      const Any *second_stored = nullptr) :
-      name(name),
-      id_(id),
-      ptr_cnt_(ptr_cnt),
-      ref_type_(ref_type),
-      cv_qualifier_(cv_qualifier),
-      size_(size),
-      first_stored(first_stored),
-      second_stored(second_stored) {}
+  virtual NameEnum id() const { return NameEnum::Unknown; }
 
-  inline bool IsLvalueReference() const { return ref_type_ == 1; }
-  inline bool IsRValueReference() const { return ref_type_ == 2; }
+  virtual const std::string &name() const {
+    static std::string name = "unknown";
+    return name;
+  }
 
-  inline bool IsConst() const { return cv_qualifier_ & 1; }
-  inline bool IsVolatile() const { return cv_qualifier_ & 2; }
+  virtual const Any *decay() const { return this; }
 
-  std::string (*const name)() = []() -> std::string { return "unknown"; };
+  virtual int PointerLevels() const { return 0; }
 
-  inline NameEnum id() const { return id_; }
-  inline int ptr_cnt() const { return ptr_cnt_; }
-  inline int ref_type() const { return ref_type_; }
-  inline int cv_qualifier() const { return cv_qualifier_; }
-  inline size_t size() const { return size_; }
+  virtual bool PointerToCV() const { return false; }
 
- private:
-  const NameEnum id_ = Unknown;
-  const int ptr_cnt_ = 0;
-  const int ref_type_ = 0; // 0: not ref, 1: lvalue ref, 2: right ref
-  const int cv_qualifier_ = 0;
-  const size_t size_ = 0; // for Array and STD_Array
+  virtual bool IsLvalueReference() const { return false; }
 
- public:
-  const Any *const first_stored = nullptr; // for container
-  const Any *const second_stored = nullptr; // for container
+  virtual bool IsRvalueReference() const { return false; }
+
+  virtual bool IsConst() const { return false; }
+
+  virtual bool IsVolatile() const { return false; }
+
+  virtual size_t size() const { return 0; }// for Array and STD_Array
+
+  virtual const Any *first() const { return nullptr; }// for container
+
+  virtual const Any *second() const { return nullptr; }// for container
 };
+
+#define MAKE_ID(v) \
+  NameEnum id() const override { return v; }
+
+#define MAKE_NAME(exp)                       \
+  const std::string &name() const override { \
+    static std::string name = exp;           \
+    return name;                             \
+  }
+
+#define MAKE_POINTER_LEVELS(v) \
+  int PointerLevels() const override { return v; }
+
+#define MAKE_POINTER_TO_CV(exp) \
+  bool PointerToCV() const override { return exp; }
+
+#define MAKE_IS_LVALUE_REFERENCE(v) \
+  bool IsLvalueReference() const override { return v; }
+
+#define MAKE_IS_RVALUE_REFERENCE(v) \
+  bool IsRvalueReference() const override { return v; }
+
+#define MAKE_IS_CONST(v) \
+  bool IsConst() const override { return v; }
+
+#define MAKE_IS_VOLATILE(v) \
+  bool IsVolatile() const override { return v; }
+
+#define MAKE_SIZE(v) \
+  size_t size() const override { return v; }
+
+#define MAKE_DECAY(v) \
+  const Any *decay() const override { return v; }
+
+#define MAKE_FIRST(ptr) \
+  const Any *first() const override { return ptr; }
+
+#define MAKE_SECOND(ptr) \
+  const Any *second() const override { return ptr; }
 
 template<class Tp>
 struct TypeInfo { static const Any info; };
 
-template<class Tp> const Any TypeInfo<Tp>::info;
+template<class Tp>
+const Any TypeInfo<Tp>::info;
 
 #define REGISTER_POD_TYPE(Tp, Enum) \
-  template <> struct TypeInfo<Tp> {     \
-    static const Any info;             \
+  template<>                        \
+  struct TypeInfo<Tp> {             \
+   private:                         \
+    class AnyImpl : public Any {    \
+     public:                        \
+      MAKE_ID(Enum)                 \
+      MAKE_NAME(#Tp)                \
+    };                              \
+                                    \
+   public:                          \
+    static const AnyImpl info;      \
   };                                \
-  const Any TypeInfo<Tp>::info(Enum, []() -> std::string { return #Tp; });
+  const TypeInfo<Tp>::AnyImpl TypeInfo<Tp>::info;
 
 REGISTER_POD_TYPE(unsigned short, UnsignedShort)
 REGISTER_POD_TYPE(unsigned int, UnsignedInt)
@@ -124,212 +157,323 @@ REGISTER_POD_TYPE(float, Float)
 REGISTER_POD_TYPE(double, Double)
 REGISTER_POD_TYPE(long double, LongDouble)
 
-#define NAME_LAMBDA_WRAP(exp) []() -> std::string { return exp; }
-
-// ========================== TypeInfo with cv qualifier begin ==========================
-
-template<class Tp>
-struct TypeInfo<const Tp> { static const Any info; };
+//========================== TypeInfo with cv qualifier begin
+//==========================
 
 template<class Tp>
-const Any TypeInfo<const Tp>::info(
-    TypeInfo<Tp>::info.id(),
-    NAME_LAMBDA_WRAP("const " + TypeInfo<Tp>::info.name()),
-    TypeInfo<Tp>::info.ptr_cnt(),
-    TypeInfo<Tp>::info.ref_type(),
-    1,
-    TypeInfo<Tp>::info.size(),
-    &TypeInfo<Tp>::info);
+struct TypeInfo<const Tp> {
+ private:
+  class AnyImpl : public Any {
+   public:
+    MAKE_ID(TypeInfo<Tp>::info.id())
+#define C "const"
+    MAKE_NAME(decay()->PointerToCV() ? TypeInfo<Tp>::info.name() + C : C " " + TypeInfo<Tp>::info.name())
+#undef C
+    MAKE_POINTER_TO_CV(decay()->PointerToCV())
+    MAKE_DECAY(TypeInfo<Tp>::info.decay())
+    MAKE_POINTER_LEVELS(decay()->PointerLevels())
+    MAKE_IS_LVALUE_REFERENCE(TypeInfo<Tp>::info.IsLvalueReference())
+    MAKE_IS_RVALUE_REFERENCE(TypeInfo<Tp>::info.IsRvalueReference())
+    MAKE_IS_CONST(true)
+    MAKE_SIZE(decay()->size())
+    MAKE_FIRST(decay()->first())
+    MAKE_SECOND(decay()->second())
+  };
+
+ public:
+  static const AnyImpl info;
+};
+template<class Tp>
+const typename TypeInfo<const Tp>::AnyImpl TypeInfo<const Tp>::info;
 
 template<class Tp>
-struct TypeInfo<volatile Tp> { static const Any info; };
+struct TypeInfo<volatile Tp> {
+ private:
+  class AnyImpl : public Any {
+   public:
+    MAKE_ID(TypeInfo<Tp>::info.id())
+#define V "volatile"
+    MAKE_NAME(decay()->PointerToCV() ? TypeInfo<Tp>::info.name() + V : V " " + TypeInfo<Tp>::info.name())
+#undef V
+    MAKE_POINTER_TO_CV(decay()->PointerToCV())
+    MAKE_DECAY(TypeInfo<Tp>::info.decay())
+    MAKE_POINTER_LEVELS(decay()->PointerLevels())
+    MAKE_IS_LVALUE_REFERENCE(TypeInfo<Tp>::info.IsLvalueReference())
+    MAKE_IS_RVALUE_REFERENCE(TypeInfo<Tp>::info.IsRvalueReference())
+    MAKE_IS_VOLATILE(true)
+    MAKE_SIZE(decay()->size())
+    MAKE_FIRST(decay()->first())
+    MAKE_SECOND(decay()->second())
+  };
+
+ public:
+  static const AnyImpl info;
+};
+template<class Tp>
+const typename TypeInfo<volatile Tp>::AnyImpl TypeInfo<volatile Tp>::info;
 
 template<class Tp>
-const Any TypeInfo<volatile Tp>::info(
-    TypeInfo<Tp>::info.id(),
-    NAME_LAMBDA_WRAP("volatile " + TypeInfo<Tp>::info.name()),
-    TypeInfo<Tp>::info.ptr_cnt(),
-    TypeInfo<Tp>::info.ref_type(),
-    2,
-    TypeInfo<Tp>::info.size(),
-    &TypeInfo<Tp>::info);
+struct TypeInfo<const volatile Tp> {
+ private:
+  class AnyImpl : public Any {
+   public:
+    MAKE_ID(TypeInfo<Tp>::info.id())
+#define CV "const volatile"
+    MAKE_NAME(decay()->PointerToCV() ? TypeInfo<Tp>::info.name() + CV : CV " " + TypeInfo<Tp>::info.name())
+#undef CV
+    MAKE_POINTER_TO_CV(decay()->PointerToCV())
+    MAKE_DECAY(TypeInfo<Tp>::info.decay())
+    MAKE_POINTER_LEVELS(decay()->PointerLevels())
+    MAKE_IS_LVALUE_REFERENCE(TypeInfo<Tp>::info.IsLvalueReference())
+    MAKE_IS_RVALUE_REFERENCE(TypeInfo<Tp>::info.IsRvalueReference())
+    MAKE_IS_VOLATILE(true)
+    MAKE_IS_CONST(true)
+    MAKE_SIZE(decay()->size())
+    MAKE_FIRST(decay()->first())
+    MAKE_SECOND(decay()->second())
+  };
+
+ public:
+  static const AnyImpl info;
+};
+template<class Tp>
+const typename TypeInfo<const volatile Tp>::AnyImpl TypeInfo<const volatile Tp>::info;
+
+// ========================== TypeInfo with cv qualifier end
+// ==========================
+
+// ======================= TypeInfo with ptr and reference begin
+// =======================
 
 template<class Tp>
-struct TypeInfo<const volatile Tp> { static const Any info; };
+struct TypeInfo<Tp *> {
+ private:
+  class AnyImpl : public Any {
+   public:
+    MAKE_ID(TypeInfo<Tp>::info.id())
+    MAKE_NAME(TypeInfo<Tp>::info.name() + "*")
+    MAKE_POINTER_LEVELS(TypeInfo<Tp>::info.PointerLevels() + 1)
+    MAKE_FIRST(&TypeInfo<Tp>::info)
+#define DEREF TypeInfo<Tp>::info
+    MAKE_POINTER_TO_CV(DEREF.PointerToCV() | DEREF.IsConst() | DEREF.IsVolatile())
+#undef DEREF
+  };
+
+ public:
+  static const AnyImpl info;
+};
+template<class Tp>
+const typename TypeInfo<Tp *>::AnyImpl TypeInfo<Tp *>::info;
 
 template<class Tp>
-const Any TypeInfo<const volatile Tp>::info(
-    TypeInfo<Tp>::info.id(),
-    NAME_LAMBDA_WRAP("const volatile " + TypeInfo<Tp>::info.name()),
-    TypeInfo<Tp>::info.ptr_cnt(),
-    TypeInfo<Tp>::info.ref_type(),
-    3,
-    TypeInfo<Tp>::info.size(),
-    &TypeInfo<Tp>::info);
+struct TypeInfo<Tp &> {
+ private:
+  class AnyImpl : public Any {
+   public:
+    MAKE_ID(TypeInfo<Tp>::info.id())
+    MAKE_NAME(TypeInfo<Tp>::info.name() + "&")
+    MAKE_DECAY(TypeInfo<Tp>::info.decay())
+    MAKE_POINTER_TO_CV(decay()->PointerToCV())
+    MAKE_POINTER_LEVELS(decay()->PointerLevels())
+    MAKE_IS_LVALUE_REFERENCE(true)
+    MAKE_SIZE(decay()->size())
+    MAKE_FIRST(decay()->first())
+    MAKE_SECOND(decay()->second())
+  };
 
-// ========================== TypeInfo with cv qualifier end ==========================
-
-
-// ======================= TypeInfo with ptr and reference begin =======================
+ public:
+  static const AnyImpl info;
+};
+template<class Tp>
+const typename TypeInfo<Tp &>::AnyImpl TypeInfo<Tp &>::info;
 
 template<class Tp>
-struct TypeInfo<Tp *> { static const Any info; };
+struct TypeInfo<Tp &&> {
+ private:
+  class AnyImpl : public Any {
+   public:
+    MAKE_ID(TypeInfo<Tp>::info.id())
+    MAKE_NAME(TypeInfo<Tp>::info.name() + "&")
+    MAKE_DECAY(TypeInfo<Tp>::info.decay())
+    MAKE_POINTER_TO_CV(decay()->PointerToCV())
+    MAKE_POINTER_LEVELS(decay()->PointerLevels())
+    MAKE_IS_RVALUE_REFERENCE(true)
+    MAKE_SIZE(decay()->size())
+    MAKE_FIRST(decay()->first())
+    MAKE_SECOND(decay()->second())
+  };
 
+ public:
+  static const AnyImpl info;
+};
 template<class Tp>
-const Any TypeInfo<Tp *>::info(
-    TypeInfo<Tp>::info.id(),
-    NAME_LAMBDA_WRAP(TypeInfo<Tp>::info.name() + "*"),
-    TypeInfo<Tp>::info.ptr_cnt() + 1,
-    0,
-    TypeInfo<Tp>::info.cv_qualifier(),
-    TypeInfo<Tp>::info.size(),
-    &TypeInfo<Tp>::info);
+const typename TypeInfo<Tp &&>::AnyImpl TypeInfo<Tp &&>::info;
 
-template<class Tp>
-struct TypeInfo<Tp &> { static const Any info; };
+// ======================= TypeInfo with ptr and reference end
+// =======================
 
-template<class Tp>
-const Any TypeInfo<Tp &>::info(
-    TypeInfo<Tp>::info.id(),
-    NAME_LAMBDA_WRAP(TypeInfo<Tp>::info.name() + "&"),
-    TypeInfo<Tp>::info.ptr_cnt(),
-    1,
-    TypeInfo<Tp>::info.cv_qualifier(),
-    TypeInfo<Tp>::info.size(),
-    &TypeInfo<Tp>::info);
-
-template<class Tp>
-struct TypeInfo<Tp &&> { static const Any info; };
-
-template<class Tp>
-const Any TypeInfo<Tp &&>::info(
-    TypeInfo<Tp>::info.id(),
-    NAME_LAMBDA_WRAP(TypeInfo<Tp>::info.name() + "&"),
-    TypeInfo<Tp>::info.ptr_cnt(),
-    2,
-    TypeInfo<Tp>::info.cv_qualifier(),
-    TypeInfo<Tp>::info.size(),
-    &TypeInfo<Tp>::info);
-
-
-// ======================= TypeInfo with ptr and reference end =======================
-
-
-// =============================== Array type begin ===============================
+// =============================== Array type begin
+// ===============================
 
 template<class Tp, size_t Size>
-struct TypeInfo<Tp[Size]> { static const Any info; };
+struct TypeInfo<Tp[Size]> {
+ private:
+  class AnyImpl : public Any {
+   public:
+    MAKE_ID(TypeInfo<Tp>::info.id())
+    MAKE_NAME(TypeInfo<Tp>::info.name() + "[" + std::to_string(Size) + "]")
+    MAKE_SIZE(Size)
+    MAKE_FIRST(&TypeInfo<Tp>::info)
+  };
+
+ public:
+  static const AnyImpl info;
+};
+template<class Tp, size_t Size>
+const typename TypeInfo<Tp[Size]>::AnyImpl TypeInfo<Tp[Size]>::info;
 
 template<class Tp, size_t Size>
-const Any TypeInfo<Tp[Size]>::info(
-    Array,
-    NAME_LAMBDA_WRAP(TypeInfo<Tp>::info.name() + "[" + std::to_string(Size) + "]"),
-    TypeInfo<Tp>::info.ptr_cnt(),
-    TypeInfo<Tp>::info.ref_type(),
-    0,
-    Size,
-    &TypeInfo<Tp>::info);
+struct TypeInfo<const Tp[Size]> {
+ private:
+  class AnyImpl : public Any {
+   public:
+    MAKE_ID(TypeInfo<Tp>::info.id())
+    MAKE_NAME("const " + TypeInfo<Tp>::info.name() + "[" + std::to_string(Size) + "]")
+    MAKE_DECAY(TypeInfo<Tp>::info.decay())
+    MAKE_IS_CONST(true);
+    MAKE_SIZE(Size)
+    MAKE_FIRST(decay()->first())
+  };
+
+ public:
+  static const AnyImpl info;
+};
+template<class Tp, size_t Size>
+const typename TypeInfo<const Tp[Size]>::AnyImpl TypeInfo<const Tp[Size]>::info;
 
 template<class Tp, size_t Size>
-struct TypeInfo<const Tp[Size]> { static const Any info; };
+struct TypeInfo<volatile Tp[Size]> {
+ private:
+  class AnyImpl : public Any {
+   public:
+    MAKE_ID(TypeInfo<Tp>::info.id())
+    MAKE_NAME("volatile " + TypeInfo<Tp>::info.name() + "[" + std::to_string(Size) + "]")
+    MAKE_DECAY(TypeInfo<Tp>::info.decay())
+    MAKE_IS_VOLATILE(true);
+    MAKE_SIZE(Size)
+    MAKE_FIRST(decay()->first())
+  };
+
+ public:
+  static const AnyImpl info;
+};
+template<class Tp, size_t Size>
+const typename TypeInfo<volatile Tp[Size]>::AnyImpl TypeInfo<volatile Tp[Size]>::info;
 
 template<class Tp, size_t Size>
-const Any TypeInfo<const Tp[Size]>::info(
-    Array,
-    NAME_LAMBDA_WRAP("const " + TypeInfo<Tp>::info.name() + "[" + std::to_string(Size) + "]"),
-    TypeInfo<Tp>::info.ptr_cnt(),
-    TypeInfo<Tp>::info.ref_type(),
-    1,
-    Size,
-    &TypeInfo<Tp>::info);
+struct TypeInfo<const volatile Tp[Size]> {
+ private:
+  class AnyImpl : public Any {
+   public:
+    MAKE_ID(TypeInfo<Tp>::info.id())
+    MAKE_NAME("const volatile " + TypeInfo<Tp>::info.name() + "[" + std::to_string(Size) + "]")
+    MAKE_DECAY(TypeInfo<Tp>::info.decay())
+    MAKE_IS_CONST(true);
+    MAKE_IS_VOLATILE(true);
+    MAKE_SIZE(Size)
+    MAKE_FIRST(decay()->first())
+  };
 
+ public:
+  static const AnyImpl info;
+};
 template<class Tp, size_t Size>
-struct TypeInfo<volatile Tp[Size]> { static const Any info; };
+const typename TypeInfo<const volatile Tp[Size]>::AnyImpl TypeInfo<const volatile Tp[Size]>::info;
 
-template<class Tp, size_t Size>
-const Any TypeInfo<volatile Tp[Size]>::info(
-    Array,
-    NAME_LAMBDA_WRAP("volatile " + TypeInfo<Tp>::info.name() + "[" + std::to_string(Size) + "]"),
-    TypeInfo<Tp>::info.ptr_cnt(),
-    TypeInfo<Tp>::info.ref_type(),
-    2,
-    Size,
-    &TypeInfo<Tp>::info);
+// =============================== Array type end
+// ===============================
 
-template<class Tp, size_t Size>
-struct TypeInfo<const volatile Tp[Size]> { static const Any info; };
+template<>
+struct TypeInfo<std::string> {
+ private:
+  class AnyImpl : public Any {
+   public:
+    MAKE_ID(STD_String)
+    MAKE_NAME("std::string")
+  };
 
-template<class Tp, size_t Size>
-const Any TypeInfo<const volatile Tp[Size]>::info(
-    Array,
-    NAME_LAMBDA_WRAP("const volatile " + TypeInfo<Tp>::info.name() + "[" + std::to_string(Size) + "]"),
-    TypeInfo<Tp>::info.ptr_cnt(),
-    TypeInfo<Tp>::info.ref_type(),
-    3,
-    Size,
-    &TypeInfo<Tp>::info);
-
-// =============================== Array type end ===============================
-
-template<> struct TypeInfo<std::string> { static const Any info; };
-
-const Any TypeInfo<std::string>::info(STD_String, NAME_LAMBDA_WRAP("std::string"));
+ public:
+  static const AnyImpl info;
+};
+const TypeInfo<std::string>::AnyImpl TypeInfo<std::string>::info;
 
 template<class Tp>
-struct TypeInfo<std::vector<Tp>> { static const Any info; };
+struct TypeInfo<std::vector<Tp>> {
+ private:
+  class AnyImpl : public Any {
+   public:
+    MAKE_ID(STD_Vector)
+    MAKE_NAME("std::vector<" + TypeInfo<Tp>::info.name() + ">")
+    MAKE_FIRST(&TypeInfo<Tp>::info)
+  };
 
+ public:
+  static const AnyImpl info;
+};
 template<class Tp>
-const Any TypeInfo<std::vector<Tp>>::info(
-    STD_Vector,
-    NAME_LAMBDA_WRAP("std::vector<" + TypeInfo<Tp>::info.name() + ">"),
-    0,
-    0,
-    0,
-    0,
-    &TypeInfo<Tp>::info);
+const typename TypeInfo<std::vector<Tp>>::AnyImpl TypeInfo<std::vector<Tp>>::info;
 
 template<class Tp, size_t Size>
-struct TypeInfo<std::array<Tp, Size>> { static const Any info; };
+struct TypeInfo<std::array<Tp, Size>> {
+ private:
+  class AnyImpl : public Any {
+   public:
+    MAKE_ID(STD_Vector)
+    MAKE_NAME("std::array<" + TypeInfo<Tp>::info.name() + "," + std::to_string(Size) + ">")
+    MAKE_SIZE(Size)
+    MAKE_FIRST(&TypeInfo<Tp>::info)
+  };
 
+ public:
+  static const AnyImpl info;
+};
 template<class Tp, size_t Size>
-const Any TypeInfo<std::array<Tp, Size>>::info(
-    STD_Array,
-    NAME_LAMBDA_WRAP("std::array<" + TypeInfo<Tp>::info.name() + "," + std::to_string(Size) + ">"),
-    0,
-    0,
-    0,
-    Size,
-    &TypeInfo<Tp>::info);
+const typename TypeInfo<std::array<Tp, Size>>::AnyImpl TypeInfo<std::array<Tp, Size>>::info;
 
 template<class T1, class T2>
-struct TypeInfo<std::pair<T1, T2>> { static const Any info; };
+struct TypeInfo<std::pair<T1, T2>> {
+ private:
+  class AnyImpl : public Any {
+   public:
+    MAKE_ID(STD_Vector)
+    MAKE_NAME("std::pair<" + TypeInfo<T1>::info.name() + "," + TypeInfo<T2>::info.name() + ">")
+    MAKE_FIRST(&TypeInfo<T1>::info)
+    MAKE_SECOND(&TypeInfo<T2>::info)
+  };
+
+ public:
+  static const AnyImpl info;
+};
+template<class T1, class T2>
+const typename TypeInfo<std::pair<T1, T2>>::AnyImpl TypeInfo<std::pair<T1, T2>>::info;
 
 template<class T1, class T2>
-const Any TypeInfo<std::pair<T1, T2>>::info(
-    STD_Pair,
-    NAME_LAMBDA_WRAP("std::pair<" + TypeInfo<T1>::info.name() + "," + TypeInfo<T2>::info.name() + ">"),
-    0,
-    0,
-    0,
-    0,
-    &TypeInfo<T1>::info,
-    &TypeInfo<T2>::info);
+struct TypeInfo<std::map<T1, T2>> {
+ private:
+  class AnyImpl : public Any {
+   public:
+    MAKE_ID(STD_Vector)
+    MAKE_NAME("std::map<" + TypeInfo<T1>::info.name() + "," + TypeInfo<T2>::info.name() + ">")
+    MAKE_FIRST(&TypeInfo<T1>::info)
+    MAKE_SECOND(&TypeInfo<T2>::info)
+  };
 
+ public:
+  static const AnyImpl info;
+};
 template<class T1, class T2>
-struct TypeInfo<std::map<T1, T2>> { static const Any info; };
+const typename TypeInfo<std::map<T1, T2>>::AnyImpl TypeInfo<std::map<T1, T2>>::info;
 
-template<class T1, class T2>
-const Any TypeInfo<std::map<T1, T2>>::info(
-    STD_Map,
-    NAME_LAMBDA_WRAP("std::map<" + TypeInfo<T1>::info.name() + "," + TypeInfo<T2>::info.name() + ">"),
-    0,
-    0,
-    0,
-    0,
-    &TypeInfo<T1>::info,
-    &TypeInfo<T2>::info);
+}// namespace magic
 
-
-}  // namespace magic
-
-#endif  // MAGIC__NAME_OF_H_
+#endif// MAGIC__NAME_OF_H_
