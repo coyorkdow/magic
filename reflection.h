@@ -38,14 +38,16 @@ class TypeFieldsScheme;
 
 #define Field(var, tag) MakeTuple(&Tp_::var, #var, #tag)
 
+#define FieldNoTag(var) MakeTuple(&Tp_::var, #var, "")
+
 #define IsReflectable(val) IsReflectableType<decay_t<decltype(val)>>()
 
-using UnifiedField = Tuple<size_t, std::string, std::string>;
+using UnifiedField = Tuple<size_t, std::string, std::string, const Any *>;
 
 template<class Tp>
 class AllFields {
  public:
-  const void *PtrOf(size_t ind) const {
+  void *PtrOf(size_t ind) const {
     assert(ind < size());
     return reinterpret_cast<char *>(&val_) + res_[ind].template Get<0>();
   }
@@ -60,16 +62,21 @@ class AllFields {
     return res_[ind].template Get<2>();
   }
 
+  const Any* TypeOf(size_t ind) const {
+    assert(ind < size());
+    return res_[ind].template Get<3>();
+  }
+
   template<class Val>
   void Set(size_t ind, Val &&v) {
     assert(ind < size());
     using ValTp = decay_t<Val>;
     auto ptr =
         reinterpret_cast<ValTp *>(reinterpret_cast<char *>(&val_) + res_[ind].template Get<0>());
-    *ptr = v;
+    *ptr = std::forward<Val>(v);
   }
 
-  constexpr size_t size() const noexcept { return AllFields<Tp>::size_; }
+  inline constexpr size_t size() const noexcept { return AllFields<Tp>::size_; }
 
  private:
   template<class T_>
@@ -89,8 +96,10 @@ class AllFields {
     size_t offset =
         (char *) &(base->*(std::forward<TupleField>(field).template Get<0>())) - (char *) base;
     std::string name = std::forward<TupleField>(field).template Get<1>();
-    std::string type_name = std::forward<TupleField>(field).template Get<2>();
-    return MakeTuple(offset, std::move(name), std::move(type_name));
+    std::string tag = std::forward<TupleField>(field).template Get<2>();
+    using rT = decltype(base->*(std::forward<TupleField>(field).template Get<0>()));
+    const Any *meta = &TypeInfo<typename std::remove_reference<rT>::type>::info;
+    return MakeTuple(offset, std::move(name), std::move(tag), meta);
   }
 
   template<size_t... N>
@@ -130,7 +139,7 @@ auto NameOf(T &&val) -> decltype(GetField<Index>(std::forward<T>(val)).template 
 template<size_t Index, class T>
 std::string TypeNameOf(T &&val) {
   using rT = decltype(val.*GetField<Index>(std::forward<T>(val)).template Get<0>());
-  return Type<typename std::remove_reference<rT>::type>::m.name();
+  return TypeInfo<typename std::remove_reference<rT>::type>::info.name();
 }
 
 template<size_t Index, class T>
@@ -146,7 +155,7 @@ auto NameOf(T &&) -> decltype(TypeFieldsScheme<decay_t<T>>::name) {
 template<class Tp, class Fn>
 class MakeHandler {
  public:
-  explicit MakeHandler(const Tp &v) : var_(v) {}
+  explicit MakeHandler(Tp &v) : var_(v) {}
 
   template<class Field>
   void operator()(Field &&field) {
@@ -159,7 +168,7 @@ class MakeHandler {
   }
 
  private:
-  const Tp &var_;
+  Tp &var_;
 };
 
 template<class Handler>
@@ -167,9 +176,8 @@ class ForEachField {
  public:
   template<class T>
   void Iterate(T &&var) {
-    using T_ = decay_t<T>;
-    auto scheme = TypeFieldsScheme<T_>::result;
-    scheme.ForEach(MakeHandler<T_, Handler>(static_cast<T_>(var)));
+    static auto scheme = TypeFieldsScheme<decay_t<T>>::result;
+    scheme.ForEach(MakeHandler<T, Handler>(var));
   };
 };
 

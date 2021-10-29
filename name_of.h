@@ -18,76 +18,92 @@
 
 namespace magic {
 
-using NameEnum = const unsigned int;
+enum NameEnum {
+  Unknown,
+  UnsignedShort,
+  UnsignedInt,
+  UnsignedLongLong,
+  SignedChar,
+  Short,
+  Int,
+  LongLong,
+  UnsignedChar,
+  Char,
+  Wchar_T,
+  Long,
+  UnsignedLong,
+  Void,
+  Char16_T,
+  Char32_T,
+  Float,
+  Double,
+  LongDouble,
 
-NameEnum Unknown = 0;
+  Array,
 
-NameEnum UnsignedShort = 1;
-NameEnum UnsignedInt = 2;
-NameEnum UnsignedLongLong = 3;
-NameEnum SignedChar = 4;
-NameEnum Short = 5;
-NameEnum Int = 6;
-NameEnum LongLong = 7;
-NameEnum UnsignedChar = 8;
-NameEnum Char = 9;
-NameEnum Wchar_T = 10;
-NameEnum Long = 11;
-NameEnum UnsignedLong = 12;
-NameEnum Void = 13;
-NameEnum Char16_T = 14;
-NameEnum Char32_T = 15;
-NameEnum Float = 16;
-NameEnum Double = 17;
-NameEnum LongDouble = 18;
-
-NameEnum Array = 30;
-
-NameEnum String = 50;
-NameEnum Vector = 51;
-NameEnum STLArray = 52;
-NameEnum Deque = 53;
-NameEnum Pair = 60;
-NameEnum Map = 61;
+  STD_String,
+  STD_Vector,
+  STD_Array,
+  STD_Pair,
+  STD_Map
+};
 
 class Any {
  public:
   Any() = default;
-  Any(NameEnum id_,
-      std::string (*name_)(),
-      int ptr_cnt_ = 0,
-      int ref_type_ = 0,
-      int cv_qualifier_ = 0,
-      size_t size_ = 0,
-      const Any *stored_ = nullptr,
-      const Any *stored2_ = nullptr) :
-      name(name_),
-      id(id_),
-      ptr_cnt(ptr_cnt_),
-      ref_type(ref_type_),
-      cv_qualifier(cv_qualifier_),
-      size(size_),
-      first_stored(stored_),
-      second_stored(stored2_) {}
+  Any(NameEnum id,
+      std::string (*name)(),
+      int ptr_cnt = 0,
+      int ref_type = 0,
+      int cv_qualifier = 0,
+      size_t size = 0,
+      const Any *first_stored = nullptr,
+      const Any *second_stored = nullptr) :
+      name(name),
+      id_(id),
+      ptr_cnt_(ptr_cnt),
+      ref_type_(ref_type),
+      cv_qualifier_(cv_qualifier),
+      size_(size),
+      first_stored(first_stored),
+      second_stored(second_stored) {}
+
+  inline bool IsLvalueReference() const { return ref_type_ == 1; }
+  inline bool IsRValueReference() const { return ref_type_ == 2; }
+
+  inline bool IsConst() const { return cv_qualifier_ & 1; }
+  inline bool IsVolatile() const { return cv_qualifier_ & 2; }
 
   std::string (*const name)() = []() -> std::string { return "unknown"; };
-  const NameEnum id = 0;
-  const int ptr_cnt = 0;
-  const int ref_type = 0; // 0: not ref, 1: lvalue ref, 2: right ref
-  const int cv_qualifier = 0;
-  const size_t size = 0; // for Array and STLArray
+
+  inline NameEnum id() const { return id_; }
+  inline int ptr_cnt() const { return ptr_cnt_; }
+  inline int ref_type() const { return ref_type_; }
+  inline int cv_qualifier() const { return cv_qualifier_; }
+  inline size_t size() const { return size_; }
+
+ private:
+  const NameEnum id_ = Unknown;
+  const int ptr_cnt_ = 0;
+  const int ref_type_ = 0; // 0: not ref, 1: lvalue ref, 2: right ref
+  const int cv_qualifier_ = 0;
+  const size_t size_ = 0; // for Array and STD_Array
+
+ public:
   const Any *const first_stored = nullptr; // for container
   const Any *const second_stored = nullptr; // for container
 };
 
 template<class Tp>
-struct Type { static const Any m; };
+struct TypeInfo { static const Any info; };
+
+template<class Tp> const Any TypeInfo<Tp>::info;
 
 #define REGISTER_POD_TYPE(Tp, Enum) \
-  template <> struct Type<Tp> {     \
-    static const Any m;             \
+  template <> struct TypeInfo<Tp> {     \
+    static const Any info;             \
   };                                \
-  const Any Type<Tp>::m(Enum, []() -> std::string { return #Tp; });
+  const Any TypeInfo<Tp>::info(Enum, []() -> std::string { return #Tp; });
 
 REGISTER_POD_TYPE(unsigned short, UnsignedShort)
 REGISTER_POD_TYPE(unsigned int, UnsignedInt)
@@ -110,208 +126,208 @@ REGISTER_POD_TYPE(long double, LongDouble)
 
 #define NAME_LAMBDA_WRAP(exp) []() -> std::string { return exp; }
 
-// ========================== Type with cv qualifier begin ==========================
+// ========================== TypeInfo with cv qualifier begin ==========================
 
 template<class Tp>
-struct Type<const Tp> { static const Any m; };
+struct TypeInfo<const Tp> { static const Any info; };
 
 template<class Tp>
-const Any Type<const Tp>::m(
-    Type<Tp>::m.id,
-    NAME_LAMBDA_WRAP("const " + Type<Tp>::m.name()),
-    Type<Tp>::m.ptr_cnt,
-    Type<Tp>::m.ref_type,
+const Any TypeInfo<const Tp>::info(
+    TypeInfo<Tp>::info.id(),
+    NAME_LAMBDA_WRAP("const " + TypeInfo<Tp>::info.name()),
+    TypeInfo<Tp>::info.ptr_cnt(),
+    TypeInfo<Tp>::info.ref_type(),
     1,
-    Type<Tp>::m.size,
-    &Type<Tp>::m);
+    TypeInfo<Tp>::info.size(),
+    &TypeInfo<Tp>::info);
 
 template<class Tp>
-struct Type<volatile Tp> { static const Any m; };
+struct TypeInfo<volatile Tp> { static const Any info; };
 
 template<class Tp>
-const Any Type<volatile Tp>::m(
-    Type<Tp>::m.id,
-    NAME_LAMBDA_WRAP("volatile " + Type<Tp>::m.name()),
-    Type<Tp>::m.ptr_cnt,
-    Type<Tp>::m.ref_type,
+const Any TypeInfo<volatile Tp>::info(
+    TypeInfo<Tp>::info.id(),
+    NAME_LAMBDA_WRAP("volatile " + TypeInfo<Tp>::info.name()),
+    TypeInfo<Tp>::info.ptr_cnt(),
+    TypeInfo<Tp>::info.ref_type(),
     2,
-    Type<Tp>::m.size,
-    &Type<Tp>::m);
+    TypeInfo<Tp>::info.size(),
+    &TypeInfo<Tp>::info);
 
 template<class Tp>
-struct Type<const volatile Tp> { static const Any m; };
+struct TypeInfo<const volatile Tp> { static const Any info; };
 
 template<class Tp>
-const Any Type<const volatile Tp>::m(
-    Type<Tp>::m.id,
-    NAME_LAMBDA_WRAP("const volatile " + Type<Tp>::m.name()),
-    Type<Tp>::m.ptr_cnt,
-    Type<Tp>::m.ref_type,
+const Any TypeInfo<const volatile Tp>::info(
+    TypeInfo<Tp>::info.id(),
+    NAME_LAMBDA_WRAP("const volatile " + TypeInfo<Tp>::info.name()),
+    TypeInfo<Tp>::info.ptr_cnt(),
+    TypeInfo<Tp>::info.ref_type(),
     3,
-    Type<Tp>::m.size,
-    &Type<Tp>::m);
+    TypeInfo<Tp>::info.size(),
+    &TypeInfo<Tp>::info);
 
-// ========================== Type with cv qualifier end ==========================
+// ========================== TypeInfo with cv qualifier end ==========================
 
 
-// ======================= Type with ptr and reference begin =======================
-
-template<class Tp>
-struct Type<Tp *> { static const Any m; };
+// ======================= TypeInfo with ptr and reference begin =======================
 
 template<class Tp>
-const Any Type<Tp *>::m(
-    Type<Tp>::m.id,
-    NAME_LAMBDA_WRAP(Type<Tp>::m.name() + "*"),
-    Type<Tp>::m.ptr_cnt + 1,
+struct TypeInfo<Tp *> { static const Any info; };
+
+template<class Tp>
+const Any TypeInfo<Tp *>::info(
+    TypeInfo<Tp>::info.id(),
+    NAME_LAMBDA_WRAP(TypeInfo<Tp>::info.name() + "*"),
+    TypeInfo<Tp>::info.ptr_cnt() + 1,
     0,
-    Type<Tp>::m.cv_qualifier,
-    Type<Tp>::m.size,
-    &Type<Tp>::m);
+    TypeInfo<Tp>::info.cv_qualifier(),
+    TypeInfo<Tp>::info.size(),
+    &TypeInfo<Tp>::info);
 
 template<class Tp>
-struct Type<Tp &> { static const Any m; };
+struct TypeInfo<Tp &> { static const Any info; };
 
 template<class Tp>
-const Any Type<Tp &>::m(
-    Type<Tp>::m.id,
-    NAME_LAMBDA_WRAP(Type<Tp>::m.name() + "&"),
-    Type<Tp>::m.ptr_cnt,
+const Any TypeInfo<Tp &>::info(
+    TypeInfo<Tp>::info.id(),
+    NAME_LAMBDA_WRAP(TypeInfo<Tp>::info.name() + "&"),
+    TypeInfo<Tp>::info.ptr_cnt(),
     1,
-    Type<Tp>::m.cv_qualifier,
-    Type<Tp>::m.size,
-    &Type<Tp>::m);
+    TypeInfo<Tp>::info.cv_qualifier(),
+    TypeInfo<Tp>::info.size(),
+    &TypeInfo<Tp>::info);
 
 template<class Tp>
-struct Type<Tp &&> { static const Any m; };
+struct TypeInfo<Tp &&> { static const Any info; };
 
 template<class Tp>
-const Any Type<Tp &&>::m(
-    Type<Tp>::m.id,
-    NAME_LAMBDA_WRAP(Type<Tp>::m.name() + "&"),
-    Type<Tp>::m.ptr_cnt,
+const Any TypeInfo<Tp &&>::info(
+    TypeInfo<Tp>::info.id(),
+    NAME_LAMBDA_WRAP(TypeInfo<Tp>::info.name() + "&"),
+    TypeInfo<Tp>::info.ptr_cnt(),
     2,
-    Type<Tp>::m.cv_qualifier,
-    Type<Tp>::m.size,
-    &Type<Tp>::m);
+    TypeInfo<Tp>::info.cv_qualifier(),
+    TypeInfo<Tp>::info.size(),
+    &TypeInfo<Tp>::info);
 
 
-// ======================= Type with ptr and reference end =======================
+// ======================= TypeInfo with ptr and reference end =======================
 
 
 // =============================== Array type begin ===============================
 
 template<class Tp, size_t Size>
-struct Type<Tp[Size]> { static const Any m; };
+struct TypeInfo<Tp[Size]> { static const Any info; };
 
 template<class Tp, size_t Size>
-const Any Type<Tp[Size]>::m(
+const Any TypeInfo<Tp[Size]>::info(
     Array,
-    NAME_LAMBDA_WRAP(Type<Tp>::m.name() + "[" + std::to_string(Size) + "]"),
-    Type<Tp>::m.ptr_cnt,
-    Type<Tp>::m.ref_type,
+    NAME_LAMBDA_WRAP(TypeInfo<Tp>::info.name() + "[" + std::to_string(Size) + "]"),
+    TypeInfo<Tp>::info.ptr_cnt(),
+    TypeInfo<Tp>::info.ref_type(),
     0,
     Size,
-    &Type<Tp>::m);
+    &TypeInfo<Tp>::info);
 
 template<class Tp, size_t Size>
-struct Type<const Tp[Size]> { static const Any m; };
+struct TypeInfo<const Tp[Size]> { static const Any info; };
 
 template<class Tp, size_t Size>
-const Any Type<const Tp[Size]>::m(
+const Any TypeInfo<const Tp[Size]>::info(
     Array,
-    NAME_LAMBDA_WRAP("const " + Type<Tp>::m.name() + "[" + std::to_string(Size) + "]"),
-    Type<Tp>::m.ptr_cnt,
-    Type<Tp>::m.ref_type,
+    NAME_LAMBDA_WRAP("const " + TypeInfo<Tp>::info.name() + "[" + std::to_string(Size) + "]"),
+    TypeInfo<Tp>::info.ptr_cnt(),
+    TypeInfo<Tp>::info.ref_type(),
     1,
     Size,
-    &Type<Tp>::m);
+    &TypeInfo<Tp>::info);
 
 template<class Tp, size_t Size>
-struct Type<volatile Tp[Size]> { static const Any m; };
+struct TypeInfo<volatile Tp[Size]> { static const Any info; };
 
 template<class Tp, size_t Size>
-const Any Type<volatile Tp[Size]>::m(
+const Any TypeInfo<volatile Tp[Size]>::info(
     Array,
-    NAME_LAMBDA_WRAP("volatile " + Type<Tp>::m.name() + "[" + std::to_string(Size) + "]"),
-    Type<Tp>::m.ptr_cnt,
-    Type<Tp>::m.ref_type,
+    NAME_LAMBDA_WRAP("volatile " + TypeInfo<Tp>::info.name() + "[" + std::to_string(Size) + "]"),
+    TypeInfo<Tp>::info.ptr_cnt(),
+    TypeInfo<Tp>::info.ref_type(),
     2,
     Size,
-    &Type<Tp>::m);
+    &TypeInfo<Tp>::info);
 
 template<class Tp, size_t Size>
-struct Type<const volatile Tp[Size]> { static const Any m; };
+struct TypeInfo<const volatile Tp[Size]> { static const Any info; };
 
 template<class Tp, size_t Size>
-const Any Type<const volatile Tp[Size]>::m(
+const Any TypeInfo<const volatile Tp[Size]>::info(
     Array,
-    NAME_LAMBDA_WRAP("const volatile " + Type<Tp>::m.name() + "[" + std::to_string(Size) + "]"),
-    Type<Tp>::m.ptr_cnt,
-    Type<Tp>::m.ref_type,
+    NAME_LAMBDA_WRAP("const volatile " + TypeInfo<Tp>::info.name() + "[" + std::to_string(Size) + "]"),
+    TypeInfo<Tp>::info.ptr_cnt(),
+    TypeInfo<Tp>::info.ref_type(),
     3,
     Size,
-    &Type<Tp>::m);
+    &TypeInfo<Tp>::info);
 
 // =============================== Array type end ===============================
 
-template<> struct Type<std::string> { static const Any m; };
+template<> struct TypeInfo<std::string> { static const Any info; };
 
-const Any Type<std::string>::m(String, NAME_LAMBDA_WRAP("std::string"));
-
-template<class Tp>
-struct Type<std::vector<Tp>> { static const Any m; };
+const Any TypeInfo<std::string>::info(STD_String, NAME_LAMBDA_WRAP("std::string"));
 
 template<class Tp>
-const Any Type<std::vector<Tp>>::m(
-    Vector,
-    NAME_LAMBDA_WRAP("std::vector<" + Type<Tp>::m.name() + ">"),
+struct TypeInfo<std::vector<Tp>> { static const Any info; };
+
+template<class Tp>
+const Any TypeInfo<std::vector<Tp>>::info(
+    STD_Vector,
+    NAME_LAMBDA_WRAP("std::vector<" + TypeInfo<Tp>::info.name() + ">"),
     0,
     0,
     0,
     0,
-    &Type<Tp>::m);
+    &TypeInfo<Tp>::info);
 
 template<class Tp, size_t Size>
-struct Type<std::array<Tp, Size>> { static const Any m; };
+struct TypeInfo<std::array<Tp, Size>> { static const Any info; };
 
 template<class Tp, size_t Size>
-const Any Type<std::array<Tp, Size>>::m(
-    STLArray,
-    NAME_LAMBDA_WRAP("std::array<" + Type<Tp>::m.name() + "," + std::to_string(Size) + ">"),
+const Any TypeInfo<std::array<Tp, Size>>::info(
+    STD_Array,
+    NAME_LAMBDA_WRAP("std::array<" + TypeInfo<Tp>::info.name() + "," + std::to_string(Size) + ">"),
     0,
     0,
     0,
     Size,
-    &Type<Tp>::m);
+    &TypeInfo<Tp>::info);
 
 template<class T1, class T2>
-struct Type<std::pair<T1, T2>> { static const Any m; };
+struct TypeInfo<std::pair<T1, T2>> { static const Any info; };
 
 template<class T1, class T2>
-const Any Type<std::pair<T1, T2>>::m(
-    Pair,
-    NAME_LAMBDA_WRAP("std::pair<" + Type<T1>::m.name() + "," + Type<T2>::m.name() + ">"),
+const Any TypeInfo<std::pair<T1, T2>>::info(
+    STD_Pair,
+    NAME_LAMBDA_WRAP("std::pair<" + TypeInfo<T1>::info.name() + "," + TypeInfo<T2>::info.name() + ">"),
     0,
     0,
     0,
     0,
-    &Type<T1>::m,
-    &Type<T2>::m);
+    &TypeInfo<T1>::info,
+    &TypeInfo<T2>::info);
 
 template<class T1, class T2>
-struct Type<std::map<T1, T2>> { static const Any m; };
+struct TypeInfo<std::map<T1, T2>> { static const Any info; };
 
 template<class T1, class T2>
-const Any Type<std::map<T1, T2>>::m(
-    Map,
-    NAME_LAMBDA_WRAP("std::map<" + Type<T1>::m.name() + "," + Type<T2>::m.name() + ">"),
+const Any TypeInfo<std::map<T1, T2>>::info(
+    STD_Map,
+    NAME_LAMBDA_WRAP("std::map<" + TypeInfo<T1>::info.name() + "," + TypeInfo<T2>::info.name() + ">"),
     0,
     0,
     0,
     0,
-    &Type<T1>::m,
-    &Type<T2>::m);
+    &TypeInfo<T1>::info,
+    &TypeInfo<T2>::info);
 
 
 }  // namespace magic
