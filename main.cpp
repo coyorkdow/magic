@@ -195,8 +195,7 @@ int main() {
           case NameEnum::Int:
             fields.Set(i, std::vector<int>{5, 6, 7, 8});
             break;
-          case NameEnum::
-              Double:
+          case NameEnum::Double:
             fields.Set(i, std::vector<double>{5.5, 6.6});
             break;
           default:;
@@ -239,11 +238,10 @@ int main() {
   assert(meta->first()->name() == "const volatile int*");
   assert(meta->second()->name() == "std::string");
 
-  assert(meta->first()->PointerLevels() == 1); // is pointer
+  assert(meta->first()->PointerLevels() == 1);// is pointer
   meta = meta->first()->first();
   assert(meta->IsConst() && meta->IsVolatile());
   assert(meta->decay()->name() == "int");
-
 
   std::vector<std::array<char[2], 10>> testa[5];
   meta = &TypeInfo<decltype(testa)>::info;
