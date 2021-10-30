@@ -95,4 +95,36 @@ assert(meta->decay()->name() == "int");
 
 `reflection.h`
 
-A simple implementation of static reflection, rely on `tuple.h`.
+A simple implementation of reflection, rely on `tuple.h` and `name_of.h`.
+
+```C++
+auto fields = GetAllFields(a);
+for (size_t i = 0; i < fields.size(); i++) {
+  auto typeinfo = fields.TypeOf(i);
+  switch (typeinfo->id()) {
+    case NameEnum::Float:
+      if (typeinfo->PointerLevels() == 0) {
+        fields.Set(i, (float) 99);
+      } else if (typeinfo->PointerLevels() == 1) {
+        float *ptr = *reinterpret_cast<float **>(fields.PtrOf(i));
+        *ptr = 100;
+      }
+      break;
+    case NameEnum::STD_Vector:
+      switch (typeinfo->first()->id()) {
+        case NameEnum::Int:
+          fields.Set(i, std::vector<int>{5, 6, 7, 8});
+          break;
+        case NameEnum::Double:
+          fields.Set(i, std::vector<double>{5.5, 6.6});
+          break;
+        default:;
+      }
+      break;
+    case NameEnum::STD_String:
+      fields.Set(i, std::string("yet another string"));
+      break;
+    default:;
+  }
+}
+```
