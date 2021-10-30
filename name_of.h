@@ -320,7 +320,7 @@ struct TypeInfo<Tp[Size]> {
  private:
   class AnyImpl : public Any {
    public:
-    MAKE_ID(TypeInfo<Tp>::info.id())
+    MAKE_ID(Array)
     MAKE_NAME(TypeInfo<Tp>::info.name() + "[" + std::to_string(Size) + "]")
     MAKE_SIZE(Size)
     MAKE_FIRST(&TypeInfo<Tp>::info)
@@ -337,7 +337,7 @@ struct TypeInfo<const Tp[Size]> {
  private:
   class AnyImpl : public Any {
    public:
-    MAKE_ID(TypeInfo<Tp>::info.id())
+    MAKE_ID(Array)
     MAKE_NAME("const " + TypeInfo<Tp>::info.name() + "[" + std::to_string(Size) + "]")
     MAKE_DECAY(TypeInfo<Tp>::info.decay())
     MAKE_IS_CONST(true);
@@ -356,7 +356,7 @@ struct TypeInfo<volatile Tp[Size]> {
  private:
   class AnyImpl : public Any {
    public:
-    MAKE_ID(TypeInfo<Tp>::info.id())
+    MAKE_ID(Array)
     MAKE_NAME("volatile " + TypeInfo<Tp>::info.name() + "[" + std::to_string(Size) + "]")
     MAKE_DECAY(TypeInfo<Tp>::info.decay())
     MAKE_IS_VOLATILE(true);
@@ -375,7 +375,7 @@ struct TypeInfo<const volatile Tp[Size]> {
  private:
   class AnyImpl : public Any {
    public:
-    MAKE_ID(TypeInfo<Tp>::info.id())
+    MAKE_ID(Array)
     MAKE_NAME("const volatile " + TypeInfo<Tp>::info.name() + "[" + std::to_string(Size) + "]")
     MAKE_DECAY(TypeInfo<Tp>::info.decay())
     MAKE_IS_CONST(true);
@@ -428,7 +428,7 @@ struct TypeInfo<std::array<Tp, Size>> {
  private:
   class AnyImpl : public Any {
    public:
-    MAKE_ID(STD_Vector)
+    MAKE_ID(STD_Array)
     MAKE_NAME("std::array<" + TypeInfo<Tp>::info.name() + "," + std::to_string(Size) + ">")
     MAKE_SIZE(Size)
     MAKE_FIRST(&TypeInfo<Tp>::info)
@@ -445,7 +445,7 @@ struct TypeInfo<std::pair<T1, T2>> {
  private:
   class AnyImpl : public Any {
    public:
-    MAKE_ID(STD_Vector)
+    MAKE_ID(STD_Pair)
     MAKE_NAME("std::pair<" + TypeInfo<T1>::info.name() + "," + TypeInfo<T2>::info.name() + ">")
     MAKE_FIRST(&TypeInfo<T1>::info)
     MAKE_SECOND(&TypeInfo<T2>::info)
@@ -462,7 +462,7 @@ struct TypeInfo<std::map<T1, T2>> {
  private:
   class AnyImpl : public Any {
    public:
-    MAKE_ID(STD_Vector)
+    MAKE_ID(STD_Map)
     MAKE_NAME("std::map<" + TypeInfo<T1>::info.name() + "," + TypeInfo<T2>::info.name() + ">")
     MAKE_FIRST(&TypeInfo<T1>::info)
     MAKE_SECOND(&TypeInfo<T2>::info)
