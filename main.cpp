@@ -227,7 +227,9 @@ int main() {
   std::vector<std::map<std::pair<volatile const int *, std::string>, uint64_t>> testv;
   meta = &TypeInfo<decltype(testv)>::info;
   assert(meta->name() == "std::vector<std::map<std::pair<const volatile int*,std::string>,unsigned long long>>");
+  assert(meta->id() == NameEnum::STD_Vector);
   assert(meta->first()->name() == "std::map<std::pair<const volatile int*,std::string>,unsigned long long>");
+  assert(meta->first()->id() == NameEnum::STD_Map);
 
   meta = meta->first();
   assert(meta->first()->name() == "std::pair<const volatile int*,std::string>");
@@ -236,6 +238,12 @@ int main() {
   meta = meta->first();
   assert(meta->first()->name() == "const volatile int*");
   assert(meta->second()->name() == "std::string");
+
+  assert(meta->first()->PointerLevels() == 1); // is pointer
+  meta = meta->first()->first();
+  assert(meta->IsConst() && meta->IsVolatile());
+  assert(meta->decay()->name() == "int");
+
 
   std::vector<std::array<char[2], 10>> testa[5];
   meta = &TypeInfo<decltype(testa)>::info;
