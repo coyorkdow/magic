@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cassert>
+#include <iomanip>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -19,7 +20,7 @@ inline std::ostream &operator<<(std::ostream &os, const std::pair<T1, T2> &v) {
   return os;
 }
 
-template<template<class ...Args> class ContainerT, class ...Args>
+template<template<class... Args> class ContainerT, class... Args>
 std::ostream &operator<<(std::ostream &os,
                          const ContainerT<Args...> &container) {
   os << '[';
@@ -35,14 +36,14 @@ std::ostream &operator<<(std::ostream &os,
 }
 
 inline std::ostream &operator<<(std::ostream &os, const std::string &str) {
-  for (const char &c: str)
+  for (const char &c : str)
     os << c;
   return os;
 }
 
 // Help to print IndexSequence
 // Source https://stackoverflow.com/a/27375675/11139119
-template<class Arg, class ...Args>
+template<class Arg, class... Args>
 void doPrint(std::ostream &out, Arg &&arg, Args &&...args) {
   out << std::forward<Arg>(arg);
   using expander = int[];
@@ -52,32 +53,46 @@ void doPrint(std::ostream &out, Arg &&arg, Args &&...args) {
 template<size_t... N>
 void TestIndexSequence(IndexSequence<N...>) {
   static const size_t seq[] = {N...};
-  for (auto each: seq) std::cout << each << ' ';
+  for (auto each : seq) std::cout << each << ' ';
   std::cout << std::endl;
 }
 
 class A {
  public:
-  A() : a(15), b(21), vi({1, 2, 3}), vd({1.1, 2.2, 3.3}), s("123_f3") {}
+  A() : f(0.5),
+        pf(new float{14.5}),
+        vi({1, 2, 3}),
+        vd({1.1, 2.2, 3.3}),
+        s("123_f3") {}
 
  private:
   friend class TypeFieldsScheme<A>;
-  int a;
-  int b;
+  float f;
+  float *pf;
   std::vector<int> vi;
   std::vector<double> vd;
   std::string s;
 };
 
-RegisterFields(A, Field(vi, std::vector<int>), Field(vd, std::vector<double>),
-               Field(s, std::string));
+RegisterFields(A,
+               Field(vi, vi tag),
+               Field(vd, vd tag),
+               Field(s, s tag),
+               FieldNoTag(f),
+               FieldNoTag(pf));
 
 class ReflectHandler {
  public:
   template<typename T>
-  void operator()(T &&var, const char *name, const char *type) {
-    std::cout << std::fixed << type << ' ' << name << ' ' << var << ' '
-              << std::endl;
+  void operator()(T &&var, const char *name, const char *tag) {
+    std::cout << "tag: " << std::setw(8) << tag;
+    std::cout << "│name: " << std::setw(8) << name;
+    std::cout << "│value: " << var << '\n';
+  }
+  void operator()(float *var, const char *name, const char *tag) {
+    std::cout << "tag: " << std::setw(8) << tag;
+    std::cout << "│name: " << std::setw(8) << name;
+    std::cout << "│value: " << *var << '\n';
   }
 };
 
@@ -123,12 +138,12 @@ int main() {
   constexpr double float_arr[] = {1.1, 2.2, 3.2, 4.5, 4.56, 5.6, 7};
   static_assert(BinarySearch<double>::LowerBound(float_arr, 5.6) == 5, "");
   assert(BinarySearch<double>::LowerBound(float_arr, 5.6)
-             == std::lower_bound(all(float_arr), 5.6) - begin(float_arr));
+         == std::lower_bound(all(float_arr), 5.6) - begin(float_arr));
 
   TestIndexSequence(MakeIndexSequence<10>());
 
   Tuple<int, double, std::string> t(1, 1.2, "11.2");
-//  static_assert(t.size() == 3, ""); // can not compile with gcc
+  //  static_assert(t.size() == 3, ""); // can not compile with gcc
   assert(t.size() == 3);
   assert(t.Get<0>() == 1);
   assert(t.Get<1>() == 1.2);
@@ -142,15 +157,15 @@ int main() {
   assert(t.Get<2>() == "string");
 
   auto tt = MakeTuple(1, "1234", 8.8);
-//  Down cast to TupleComponent and TupleImpl should be forbidden.
-//  TupleComponent<0, int> &tc = tt;
-//  TupleImpl<IndexSequence<0, 1, 2>, int, const char *, double> &c = tt;
+  //  Down cast to TupleComponent and TupleImpl should be forbidden.
+  //  TupleComponent<0, int> &tc = tt;
+  //  TupleImpl<IndexSequence<0, 1, 2>, int, const char *, double> &c = tt;
   assert(tt.Get<0>() == 1);
-//  assert(tt.Get<1>() == "1234");
+  //  assert(tt.Get<1>() == "1234");
   assert(tt.Get<2>() == 8.8);
 
   A a;
-  static_assert(TypeFieldsScheme<A>::size == 3, "");
+  static_assert(TypeFieldsScheme<A>::size == 5, "");
   static_assert(IsReflectable(a) == true, "");
   static_assert(IsReflectable(tt) == false, "");
   std::cout << NameOf(a) << std::endl;
@@ -161,17 +176,72 @@ int main() {
 
   ForEachField<ReflectHandler> iterator;
   iterator.Iterate(a);
+  std::cout << std::endl;
 
   auto fields = GetAllFields(a);
   for (size_t i = 0; i < fields.size(); i++) {
-    if (fields.TypeNameOf(i) == "std::vector<int>") {
-      fields.Set(i, std::vector<int>{5, 6, 7, 8});
-    } else if (fields.TypeNameOf(i) == "std::vector<double>") {
-      fields.Set(i, std::vector<double>{5.5, 6.6});
-    } else if (fields.TypeNameOf(i) == "std::string") {
-      fields.Set(i, std::string("yet another string"));
+    auto typeinfo = fields.TypeOf(i);
+    switch (typeinfo->id()) {
+      case NameEnum::Float:
+        if (typeinfo->PointerLevels() == 0) {
+          fields.Set(i, (float) 99);
+        } else if (typeinfo->PointerLevels() == 1) {
+          float *ptr = *reinterpret_cast<float **>(fields.PtrOf(i));
+          *ptr = 100;
+        }
+        break;
+      case NameEnum::STD_Vector:
+        switch (typeinfo->first()->id()) {
+          case NameEnum::Int:
+            fields.Set(i, std::vector<int>{5, 6, 7, 8});
+            break;
+          case NameEnum::
+              Double:
+            fields.Set(i, std::vector<double>{5.5, 6.6});
+            break;
+          default:;
+        }
+        break;
+      case NameEnum::STD_String:
+        fields.Set(i, std::string("yet another string"));
+        break;
+      default:;
     }
   }
 
   iterator.Iterate(a);
+
+  using base = const volatile int;
+  const Any *meta = &TypeInfo<base>::info;
+  assert(meta->name() == "const volatile int");
+  using wrap1 = base *;
+  meta = &TypeInfo<wrap1>::info;
+  assert(meta->name() == "const volatile int*");
+  using wrap2 = const wrap1 **;
+  meta = &TypeInfo<wrap2>::info;
+  assert(meta->name() == "const volatile int*const**");
+  using wrap3 = volatile wrap2;
+  meta = &TypeInfo<wrap3>::info;
+  assert(meta->name() == "const volatile int*const**volatile");
+
+  std::vector<std::map<std::pair<volatile const int *, std::string>, uint64_t>> testv;
+  meta = &TypeInfo<decltype(testv)>::info;
+  assert(meta->name() == "std::vector<std::map<std::pair<const volatile int*,std::string>,unsigned long long>>");
+  assert(meta->first()->name() == "std::map<std::pair<const volatile int*,std::string>,unsigned long long>");
+
+  meta = meta->first();
+  assert(meta->first()->name() == "std::pair<const volatile int*,std::string>");
+  assert(meta->second()->name() == "unsigned long long");
+
+  meta = meta->first();
+  assert(meta->first()->name() == "const volatile int*");
+  assert(meta->second()->name() == "std::string");
+
+  std::vector<std::array<char[2], 10>> testa[5];
+  meta = &TypeInfo<decltype(testa)>::info;
+  assert(meta->name() == "std::vector<std::array<char[2],10>>[5]");
+
+  const volatile auto &&testaref = &testa;
+  meta = &TypeInfo<decltype(testaref)>::info;
+  assert(meta->name() == "const volatile std::vector<std::array<char[2],10>>[5]*&");
 }

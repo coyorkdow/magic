@@ -18,7 +18,7 @@ struct TupleComponent {
 };
 
 template<class Index, class ...Tp>
-struct TupleImpl;
+class TupleImpl;
 
 template<size_t ...IndexSeq, class ...Tp>
 class TupleImpl<IndexSequence<IndexSeq...>, Tp...>

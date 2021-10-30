@@ -5,6 +5,8 @@ set(CMAKE_CXX_STANDARD 11)
 
 include_directories(.)
 
+add_compile_options(-Wall)
+
 add_executable(magic
         main.cpp
         util.h
@@ -12,4 +14,4 @@ add_executable(magic
         binary_search.h
         index_sequence.h
         tuple.h
-        reflection.h)
+        reflection.h name_of.h)
