@@ -15,7 +15,8 @@ struct MaxDigit { static const uint64_t result; };
 template<uint64_t Num>
 const uint64_t MaxDigit<Num>::result = 1 + MaxDigit<(Num >> 1)>::result;
 
-template<> const uint64_t MaxDigit<0>::result = 0;
+template<>
+const uint64_t MaxDigit<0>::result = 0;
 
 template<uint64_t Base, uint64_t Exp, uint64_t Mod>
 class Power {
@@ -29,7 +30,7 @@ class Power {
   struct Process {
     using next = Process<DIGIT << 1, Current * Current % Mod>;
     static const uint64_t result =
-        IfThenElse<bool(DIGIT & Exp), Times<Current, next::result>,
+        IfThenElse<bool(DIGIT& Exp), Times<Current, next::result>,
                    Times<1, next::result>>::result::result;
   };
 
@@ -44,6 +45,6 @@ class Power {
   }
 };
 
-} // namespace magic
+}// namespace magic
 
-#endif // MAGIC__QUICK_POWER_H_
+#endif// MAGIC__QUICK_POWER_H_

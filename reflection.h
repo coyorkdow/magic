@@ -8,12 +8,13 @@
 #include <functional>
 #include <type_traits>
 
-#include "tuple.h"
 #include "name_of.h"
+#include "tuple.h"
 
 namespace magic {
 
-template<class T> using decay_t = typename std::decay<T>::type;
+template<class T>
+using decay_t = typename std::decay<T>::type;
 
 template<class T>
 struct IsReflectableType : public std::false_type {};
@@ -21,19 +22,22 @@ struct IsReflectableType : public std::false_type {};
 template<class Tp>
 class TypeFieldsScheme;
 
-#define RegisterFields(Tp, ...)                                                  \
-  namespace magic {                                                              \
-    template <> class TypeFieldsScheme<Tp> {                                     \
-      using Tp_ = Tp;                                                            \
-      using rT_ = std::remove_reference<decltype(MakeTuple(__VA_ARGS__))>::type; \
-    public:                                                                      \
-      static constexpr rT_ result = MakeTuple(__VA_ARGS__);                      \
-      static constexpr auto name = #Tp;                                          \
-      static constexpr size_t size = MakeTuple(__VA_ARGS__).size();              \
-    };                                                                           \
-    constexpr typename TypeFieldsScheme<Tp>::rT_ TypeFieldsScheme<Tp>::result;   \
-                                                                                 \
-    template<> struct IsReflectableType<Tp> : public std::true_type {};          \
+#define RegisterFields(Tp, ...)                                                \
+  namespace magic {                                                            \
+  template<>                                                                   \
+  class TypeFieldsScheme<Tp> {                                                 \
+    using Tp_ = Tp;                                                            \
+    using rT_ = std::remove_reference<decltype(MakeTuple(__VA_ARGS__))>::type; \
+                                                                               \
+   public:                                                                     \
+    static constexpr rT_ result = MakeTuple(__VA_ARGS__);                      \
+    static constexpr auto name = #Tp;                                          \
+    static constexpr size_t size = MakeTuple(__VA_ARGS__).size();              \
+  };                                                                           \
+  constexpr typename TypeFieldsScheme<Tp>::rT_ TypeFieldsScheme<Tp>::result;   \
+                                                                               \
+  template<>                                                                   \
+  struct IsReflectableType<Tp> : public std::true_type {};                     \
   }
 
 #define Field(var, tag) MakeTuple(&Tp_::var, #var, #tag)
@@ -62,7 +66,7 @@ class AllFields {
     return res_[ind].template Get<2>();
   }
 
-  const Any* TypeOf(size_t ind) const {
+  const Any *TypeOf(size_t ind) const {
     assert(ind < size());
     return res_[ind].template Get<3>();
   }
@@ -159,8 +163,8 @@ class MakeHandler {
 
   template<class Field>
   void operator()(Field &&field) {
-//    static_assert(typename std::decay<Field>::type().size() == 3,
-//                  "invalid argument, not a Filed");
+    //    static_assert(typename std::decay<Field>::type().size() == 3,
+    //                  "invalid argument, not a Filed");
     static_assert(TupleSize<decay_t<Field>>::result == 3, "invalid argument, not a Filed");
     Fn()(var_.*std::forward<Field>(field).template Get<0>(),
          std::forward<Field>(field).template Get<1>(),
@@ -181,6 +185,6 @@ class ForEachField {
   };
 };
 
-} // namespace magic
+}// namespace magic
 
-#endif // MAGIC__REFLECTION_H_
+#endif// MAGIC__REFLECTION_H_

@@ -17,20 +17,20 @@ struct TupleComponent {
   constexpr explicit TupleComponent(Tp v) : value(v) {}
 };
 
-template<class Index, class ...Tp>
+template<class Index, class... Tp>
 class TupleImpl;
 
-template<size_t ...IndexSeq, class ...Tp>
+template<size_t... IndexSeq, class... Tp>
 class TupleImpl<IndexSequence<IndexSeq...>, Tp...>
     : private TupleComponent<IndexSeq, Tp>... {
 
-  template<size_t Begin, size_t Index, class Tp_, class ...Tps_>
+  template<size_t Begin, size_t Index, class Tp_, class... Tps_>
   struct IterateElementType {
     static_assert(Index < sizeof...(IndexSeq), "index out of bound");
     using result = typename IterateElementType<Begin + 1, Index, Tps_...>::result;
   };
 
-  template<size_t Index, class Tp_, class ...Tps_>
+  template<size_t Index, class Tp_, class... Tps_>
   struct IterateElementType<Index, Index, Tp_, Tps_...> {
     using result = Tp_;
   };
@@ -43,8 +43,8 @@ class TupleImpl<IndexSequence<IndexSeq...>, Tp...>
  protected:
   constexpr TupleImpl() = default;
 
-  template<class ...Up>
-  constexpr explicit TupleImpl(Up ...up) : TupleComponent<IndexSeq, Tp>(up)... {}
+  template<class... Up>
+  constexpr explicit TupleImpl(Up... up) : TupleComponent<IndexSeq, Tp>(up)... {}
 
   template<size_t Index>
   const typename GetElementType<Index>::result &Get() const {
@@ -63,19 +63,19 @@ class TupleImpl<IndexSequence<IndexSeq...>, Tp...>
   }
 };
 
-template<class ...Tp>
+template<class... Tp>
 class Tuple : protected TupleImpl<typename IndexSeqImpl<0, sizeof...(Tp) - 1>::result, Tp...> {
   using Base = TupleImpl<typename IndexSeqImpl<0, sizeof...(Tp) - 1>::result, Tp...>;
 
  public:
+  using Base::ForEach;
   using Base::Get;
   using Base::Set;
-  using Base::ForEach;
 
   constexpr Tuple() = default;
 
-  template<class ...Up>
-  constexpr explicit Tuple(Up ...up) : Base(up...) {}
+  template<class... Up>
+  constexpr explicit Tuple(Up... up) : Base(up...) {}
 
   inline constexpr size_t size() const noexcept { return sizeof...(Tp); }
 };
@@ -83,19 +83,19 @@ class Tuple : protected TupleImpl<typename IndexSeqImpl<0, sizeof...(Tp) - 1>::r
 template<class Tp>
 struct TupleSize;
 
-template<class ...Tp>
+template<class... Tp>
 struct TupleSize<Tuple<Tp...>> {
   static const size_t result;
 };
 
-template<class ...Tp>
+template<class... Tp>
 const size_t TupleSize<Tuple<Tp...>>::result = sizeof...(Tp);
 
-template<class ...Tp>
+template<class... Tp>
 inline constexpr Tuple<typename std::decay<Tp>::type...> MakeTuple(Tp &&...t) {
   return Tuple<typename std::decay<Tp>::type...>(std::forward<Tp>(t)...);
 }
 
-} // namespace magic
+}// namespace magic
 
-#endif // MAGIC__TUPLE_H_
+#endif// MAGIC__TUPLE_H_

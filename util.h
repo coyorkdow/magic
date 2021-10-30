@@ -20,6 +20,6 @@ struct IfThenElse<false, Then, Else> {
   using result = Else;
 };
 
-} // namespace magic
+}// namespace magic
 
-#endif // MAGIC__UTIL_H_
+#endif// MAGIC__UTIL_H_

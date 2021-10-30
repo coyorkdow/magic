@@ -46,13 +46,13 @@ class BinarySearch {
   static constexpr size_t PerformSearch(T const (&array)[N], T value, size_t l,
                                         size_t r, Compare value_compare) {
     return (l == r) ? l
-                    : value_compare(array[MID], value)
-                      ? PerformSearch(array, value, MID + 1, r, value_compare)
-                      : PerformSearch(array, value, l, MID, value_compare);
+        : value_compare(array[MID], value)
+        ? PerformSearch(array, value, MID + 1, r, value_compare)
+        : PerformSearch(array, value, l, MID, value_compare);
   };
 #undef MID
 };
 
-} // namespace magic
+}// namespace magic
 
-#endif // MAGIC__BINARY_SEARCH_H_
+#endif// MAGIC__BINARY_SEARCH_H_
