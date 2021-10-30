@@ -13,7 +13,7 @@ struct IndexSequence {};
 template<class, class>
 struct IndexSeqCombiner;
 
-template<size_t ...Left, size_t ...Right>
+template<size_t... Left, size_t... Right>
 struct IndexSeqCombiner<IndexSequence<Left...>, IndexSequence<Right...>> {
   using result = IndexSequence<Left..., Right...>;
 };
@@ -37,6 +37,6 @@ struct IndexSeqImpl<Begin, Begin> {
 template<size_t N>
 using MakeIndexSequence = typename IndexSeqImpl<0, N - 1>::result;
 
-} // namespace magic
+}// namespace magic
 
-#endif // MAGIC__INDEX_SEQUENCE_H_
+#endif// MAGIC__INDEX_SEQUENCE_H_
