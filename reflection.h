@@ -22,7 +22,7 @@ struct IsReflectableType : public std::false_type {};
 template<class Tp>
 class TypeFieldsScheme;
 
-#define RegisterFields(Tp, ...)                                                \
+#define REGISTER_FIELDS(Tp, ...)                                               \
   namespace magic {                                                            \
   template<>                                                                   \
   class TypeFieldsScheme<Tp> {                                                 \
@@ -40,11 +40,11 @@ class TypeFieldsScheme;
   struct IsReflectableType<Tp> : public std::true_type {};                     \
   }
 
-#define Field(var, tag) MakeTuple(&Tp_::var, #var, #tag)
+#define FIELD(var, tag) MakeTuple(&Tp_::var, #var, #tag)
 
-#define FieldNoTag(var) MakeTuple(&Tp_::var, #var, "")
+#define FIELD_NO_TAG(var) MakeTuple(&Tp_::var, #var, "")
 
-#define IsReflectable(val) IsReflectableType<decay_t<decltype(val)>>()
+#define IS_REFLECTABLE(val) IsReflectableType<decay_t<decltype(val)>>()
 
 using UnifiedField = Tuple<size_t, std::string, std::string, const Any *>;
 
