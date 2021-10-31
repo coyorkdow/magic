@@ -7,9 +7,11 @@
 
 #include <array>
 #include <deque>
+#include <list>
 #include <map>
 #include <queue>
 #include <set>
+#include <stack>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -33,19 +35,33 @@ enum NameEnum {
   Long,
   UnsignedLong,
   Void,
+  Bool,
   Char16_T,
   Char32_T,
   Float,
   Double,
   LongDouble,
+  STD_NullptrT,
 
   Array,
 
   STD_String,
   STD_Vector,
   STD_Array,
+  STD_List,
+  STD_Stack,
+  STD_Queue,
+  STD_Deque,
+  STD_PriorityQueue,
   STD_Pair,
-  STD_Map
+  STD_Map,
+  STD_Set,
+  STD_UnorderedMap,
+  STD_UnorderedSet,
+  STD_Multimap,
+  STD_MultiSet,
+  STD_UnorderedMultimap,
+  STD_UnorderedMultiset
 };
 
 class Any {
@@ -123,39 +139,76 @@ struct TypeInfo { static const Any info; };
 template<class Tp>
 const Any TypeInfo<Tp>::info;
 
-#define REGISTER_POD_TYPE(Tp, Enum) \
-  template<>                        \
-  struct TypeInfo<Tp> {             \
-   private:                         \
-    class AnyImpl : public Any {    \
-     public:                        \
-      MAKE_ID(Enum)                 \
-      MAKE_NAME(#Tp)                \
-    };                              \
-                                    \
-   public:                          \
-    static const AnyImpl info;      \
-  };                                \
+#define REGISTER_FUNDAMENTAL_TYPE(Tp, Enum) \
+  template<>                                \
+  struct TypeInfo<Tp> {                     \
+   private:                                 \
+    class AnyImpl : public Any {            \
+     public:                                \
+      MAKE_ID(Enum)                         \
+      MAKE_NAME(#Tp)                        \
+    };                                      \
+                                            \
+   public:                                  \
+    static const AnyImpl info;              \
+  };                                        \
   const TypeInfo<Tp>::AnyImpl TypeInfo<Tp>::info;
 
-REGISTER_POD_TYPE(unsigned short, UnsignedShort)
-REGISTER_POD_TYPE(unsigned int, UnsignedInt)
-REGISTER_POD_TYPE(unsigned long long, UnsignedLongLong)
-REGISTER_POD_TYPE(signed char, SignedChar)
-REGISTER_POD_TYPE(short, Short)
-REGISTER_POD_TYPE(int, Int)
-REGISTER_POD_TYPE(long long, LongLong)
-REGISTER_POD_TYPE(unsigned char, UnsignedChar)
-REGISTER_POD_TYPE(char, Char)
-REGISTER_POD_TYPE(wchar_t, Wchar_T)
-REGISTER_POD_TYPE(long, Long)
-REGISTER_POD_TYPE(unsigned long, UnsignedLong)
-REGISTER_POD_TYPE(void, Void)
-REGISTER_POD_TYPE(char16_t, Char16_T)
-REGISTER_POD_TYPE(char32_t, Char32_T)
-REGISTER_POD_TYPE(float, Float)
-REGISTER_POD_TYPE(double, Double)
-REGISTER_POD_TYPE(long double, LongDouble)
+#define REGISTER_CONTAINER(Tp, Enum)                       \
+  template<class T1>                                       \
+  struct TypeInfo<Tp<T1>> {                                \
+   private:                                                \
+    class AnyImpl : public Any {                           \
+     public:                                               \
+      MAKE_ID(Enum)                                        \
+      MAKE_NAME(#Tp "<" + TypeInfo<T1>::info.name() + ">") \
+      MAKE_FIRST(&TypeInfo<T1>::info)                      \
+    };                                                     \
+                                                           \
+   public:                                                 \
+    static const AnyImpl info;                             \
+  };                                                       \
+  template<class T1>                                       \
+  const typename TypeInfo<Tp<T1>>::AnyImpl TypeInfo<Tp<T1>>::info;
+
+#define REGISTER_PAIR_CONTAINER(Tp, Enum)                                                    \
+  template<class T1, class T2>                                                               \
+  struct TypeInfo<Tp<T1, T2>> {                                                              \
+   private:                                                                                  \
+    class AnyImpl : public Any {                                                             \
+     public:                                                                                 \
+      MAKE_ID(Enum)                                                                          \
+      MAKE_NAME(#Tp "<" + TypeInfo<T1>::info.name() + "," + TypeInfo<T2>::info.name() + ">") \
+      MAKE_FIRST(&TypeInfo<T1>::info)                                                        \
+      MAKE_SECOND(&TypeInfo<T2>::info)                                                       \
+    };                                                                                       \
+                                                                                             \
+   public:                                                                                   \
+    static const AnyImpl info;                                                               \
+  };                                                                                         \
+  template<class T1, class T2>                                                               \
+  const typename TypeInfo<Tp<T1, T2>>::AnyImpl TypeInfo<Tp<T1, T2>>::info;
+
+REGISTER_FUNDAMENTAL_TYPE(unsigned short, UnsignedShort)
+REGISTER_FUNDAMENTAL_TYPE(unsigned int, UnsignedInt)
+REGISTER_FUNDAMENTAL_TYPE(unsigned long long, UnsignedLongLong)
+REGISTER_FUNDAMENTAL_TYPE(signed char, SignedChar)
+REGISTER_FUNDAMENTAL_TYPE(short, Short)
+REGISTER_FUNDAMENTAL_TYPE(int, Int)
+REGISTER_FUNDAMENTAL_TYPE(long long, LongLong)
+REGISTER_FUNDAMENTAL_TYPE(unsigned char, UnsignedChar)
+REGISTER_FUNDAMENTAL_TYPE(char, Char)
+REGISTER_FUNDAMENTAL_TYPE(wchar_t, Wchar_T)
+REGISTER_FUNDAMENTAL_TYPE(long, Long)
+REGISTER_FUNDAMENTAL_TYPE(bool, Bool)
+REGISTER_FUNDAMENTAL_TYPE(unsigned long, UnsignedLong)
+REGISTER_FUNDAMENTAL_TYPE(void, Void)
+REGISTER_FUNDAMENTAL_TYPE(char16_t, Char16_T)
+REGISTER_FUNDAMENTAL_TYPE(char32_t, Char32_T)
+REGISTER_FUNDAMENTAL_TYPE(float, Float)
+REGISTER_FUNDAMENTAL_TYPE(double, Double)
+REGISTER_FUNDAMENTAL_TYPE(long double, LongDouble)
+REGISTER_FUNDAMENTAL_TYPE(std::nullptr_t, STD_NullptrT)
 
 //========================== TypeInfo with cv qualifier begin
 //==========================
@@ -407,22 +460,6 @@ struct TypeInfo<std::string> {
 };
 const TypeInfo<std::string>::AnyImpl TypeInfo<std::string>::info;
 
-template<class Tp>
-struct TypeInfo<std::vector<Tp>> {
- private:
-  class AnyImpl : public Any {
-   public:
-    MAKE_ID(STD_Vector)
-    MAKE_NAME("std::vector<" + TypeInfo<Tp>::info.name() + ">")
-    MAKE_FIRST(&TypeInfo<Tp>::info)
-  };
-
- public:
-  static const AnyImpl info;
-};
-template<class Tp>
-const typename TypeInfo<std::vector<Tp>>::AnyImpl TypeInfo<std::vector<Tp>>::info;
-
 template<class Tp, size_t Size>
 struct TypeInfo<std::array<Tp, Size>> {
  private:
@@ -440,39 +477,23 @@ struct TypeInfo<std::array<Tp, Size>> {
 template<class Tp, size_t Size>
 const typename TypeInfo<std::array<Tp, Size>>::AnyImpl TypeInfo<std::array<Tp, Size>>::info;
 
-template<class T1, class T2>
-struct TypeInfo<std::pair<T1, T2>> {
- private:
-  class AnyImpl : public Any {
-   public:
-    MAKE_ID(STD_Pair)
-    MAKE_NAME("std::pair<" + TypeInfo<T1>::info.name() + "," + TypeInfo<T2>::info.name() + ">")
-    MAKE_FIRST(&TypeInfo<T1>::info)
-    MAKE_SECOND(&TypeInfo<T2>::info)
-  };
+REGISTER_CONTAINER(std::vector, STD_Vector)
+REGISTER_CONTAINER(std::list, STD_List)
+REGISTER_CONTAINER(std::stack, STD_Stack)
+REGISTER_CONTAINER(std::queue, STD_Queue)
+REGISTER_CONTAINER(std::deque, STD_Deque)
+REGISTER_CONTAINER(std::priority_queue, STD_PriorityQueue)
 
- public:
-  static const AnyImpl info;
-};
-template<class T1, class T2>
-const typename TypeInfo<std::pair<T1, T2>>::AnyImpl TypeInfo<std::pair<T1, T2>>::info;
+REGISTER_CONTAINER(std::set, STD_Set)
+REGISTER_CONTAINER(std::multiset, STD_MultiSet)
+REGISTER_CONTAINER(std::unordered_set, STD_UnorderedSet)
+REGISTER_CONTAINER(std::unordered_multiset, STD_UnorderedMultiset)
 
-template<class T1, class T2>
-struct TypeInfo<std::map<T1, T2>> {
- private:
-  class AnyImpl : public Any {
-   public:
-    MAKE_ID(STD_Map)
-    MAKE_NAME("std::map<" + TypeInfo<T1>::info.name() + "," + TypeInfo<T2>::info.name() + ">")
-    MAKE_FIRST(&TypeInfo<T1>::info)
-    MAKE_SECOND(&TypeInfo<T2>::info)
-  };
-
- public:
-  static const AnyImpl info;
-};
-template<class T1, class T2>
-const typename TypeInfo<std::map<T1, T2>>::AnyImpl TypeInfo<std::map<T1, T2>>::info;
+REGISTER_PAIR_CONTAINER(std::pair, STD_Pair)
+REGISTER_PAIR_CONTAINER(std::map, STD_Map)
+REGISTER_PAIR_CONTAINER(std::multimap, STD_Multimap)
+REGISTER_PAIR_CONTAINER(std::unordered_map, STD_UnorderedMap)
+REGISTER_PAIR_CONTAINER(std::unordered_multimap, STD_UnorderedMultimap)
 
 }// namespace magic
 

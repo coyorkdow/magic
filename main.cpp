@@ -74,12 +74,12 @@ class A {
   std::string s;
 };
 
-RegisterFields(A,
-               Field(vi, vi tag),
-               Field(vd, vd tag),
-               Field(s, s tag),
-               FieldNoTag(f),
-               FieldNoTag(pf));
+REGISTER_FIELDS(A,
+                FIELD(vi, vi tag),
+                FIELD(vd, vd tag),
+                FIELD(s, s tag),
+                FIELD_NO_TAG(f),
+                FIELD_NO_TAG(pf));
 
 class ReflectHandler {
  public:
@@ -166,8 +166,8 @@ int main() {
 
   A a;
   static_assert(TypeFieldsScheme<A>::size == 5, "");
-  static_assert(IsReflectable(a) == true, "");
-  static_assert(IsReflectable(tt) == false, "");
+  static_assert(IS_REFLECTABLE(a) == true, "");
+  static_assert(IS_REFLECTABLE(tt) == false, "");
   std::cout << NameOf(a) << std::endl;
   std::cout << ValueOf<0>(a) << ' ' << ValueOf<1>(a) << ' ' << ValueOf<2>(a) << std::endl;
   std::cout << NameOf<0>(a) << ' ' << NameOf<1>(a) << ' ' << NameOf<2>(a) << std::endl;
