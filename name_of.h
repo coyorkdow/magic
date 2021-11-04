@@ -346,7 +346,7 @@ struct TypeInfo<Tp &&> {
   class AnyImpl : public Any {
    public:
     MAKE_ID(TypeInfo<Tp>::info.id())
-    MAKE_NAME(TypeInfo<Tp>::info.name() + "&")
+    MAKE_NAME(TypeInfo<Tp>::info.name() + "&&")
     MAKE_DECAY(TypeInfo<Tp>::info.decay())
     MAKE_POINTER_TO_CV(decay()->PointerToCV())
     MAKE_POINTER_LEVELS(decay()->PointerLevels())
