@@ -6,6 +6,7 @@
 #define MAGIC__NAME_OF_H_
 
 #include <array>
+#include <cstring>
 #include <deque>
 #include <list>
 #include <map>
@@ -134,10 +135,33 @@ class Any {
   const Any *second() const override { return ptr; }
 
 template<class Tp>
-struct TypeInfo { static const Any info; };
+const char *n() {
+#if defined(__clang__)
+  static char name[sizeof(__PRETTY_FUNCTION__) - 30]{};
+  ::strncpy(name, __PRETTY_FUNCTION__ + 29, sizeof(name) - 1);
+#elif defined(__GNUC__)
+  static char name[sizeof(__PRETTY_FUNCTION__) - 35]{};
+  ::strncpy(name, __PRETTY_FUNCTION__ + 34, sizeof(name) - 1);
+#elif defined(_MSC_VER)
+  // todo
+#endif
+  return name;
+}
 
 template<class Tp>
-const Any TypeInfo<Tp>::info;
+struct TypeInfo {
+ private:
+  class AnyImpl : public Any {
+   public:
+    MAKE_NAME(n<Tp>())
+  };
+
+ public:
+  static const AnyImpl info;
+};
+
+template<class Tp>
+const typename TypeInfo<Tp>::AnyImpl TypeInfo<Tp>::info;
 
 #define REGISTER_FUNDAMENTAL_TYPE(Tp, Enum) \
   template<>                                \
