@@ -249,5 +249,5 @@ int main() {
 
   const volatile auto &&testaref = &testa;
   meta = &TypeInfo<decltype(testaref)>::info;
-  assert(meta->name() == "const volatile std::vector<std::array<char[2],10>>[5]*&");
+  assert(meta->name() == "const volatile std::vector<std::array<char[2],10>>[5]*&&");
 }
