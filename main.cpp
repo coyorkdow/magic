@@ -96,16 +96,13 @@ class ReflectHandler {
   }
 };
 
-int main() {
-  constexpr int arr[] = {1, 2, 3, 4, 4, 5, 5, 5, 6, 7};
-  char show0[Power<2, 10, 998244353>::Calculate()];
-  char show1[BinarySearch<int>::LowerBound(arr, 4)];
-  char show2[BinarySearch<int>::UpperBound(arr, 4)];
-  static_assert(sizeof(show0) == 1024, "");
-  static_assert(sizeof(show1) == 3, "");
-  static_assert(sizeof(show2) == 5, "");
+void TestPower() {
+  static_assert(Power<2, 10, 998244353>::Calculate() == 1024, "");
   static_assert(Power<3, 20, 998244353>::Calculate() == 492051342, "");
+}
 
+void TestBinarySearch() {
+  constexpr int arr[] = {1, 2, 3, 4, 4, 5, 5, 5, 6, 7};
   static_assert(BinarySearch<int>::LowerBound(arr, 4) == 3, "");
   static_assert(BinarySearch<int>::UpperBound(arr, 4) == 5, "");
   static_assert(BinarySearch<int>::LowerBound(arr, 5) == 5, "");
@@ -139,9 +136,9 @@ int main() {
   static_assert(BinarySearch<double>::LowerBound(float_arr, 5.6) == 5, "");
   assert(BinarySearch<double>::LowerBound(float_arr, 5.6)
          == std::lower_bound(all(float_arr), 5.6) - begin(float_arr));
+}
 
-  TestIndexSequence(MakeIndexSequence<10>());
-
+void TestTuple() {
   Tuple<int, double, std::string> t(1, 1.2, "11.2");
   //  static_assert(t.size() == 3, ""); // can not compile with gcc
   assert(t.size() == 3);
@@ -163,10 +160,13 @@ int main() {
   assert(tt.Get<0>() == 1);
   //  assert(tt.Get<1>() == "1234");
   assert(tt.Get<2>() == 8.8);
+}
 
+void TestReflection() {
   A a;
   static_assert(TypeFieldsScheme<A>::size == 5, "");
   static_assert(IS_REFLECTABLE(a) == true, "");
+  auto tt = MakeTuple(1, 2, 3);
   static_assert(IS_REFLECTABLE(tt) == false, "");
   std::cout << NameOf(a) << std::endl;
   std::cout << ValueOf<0>(a) << ' ' << ValueOf<1>(a) << ' ' << ValueOf<2>(a) << std::endl;
@@ -209,7 +209,9 @@ int main() {
   }
 
   iterator.Iterate(a);
+}
 
+void TestNameOf() {
   using base = const volatile int;
   const Any *meta = &TypeInfo<base>::info;
   assert(meta->name() == "const volatile int");
@@ -250,4 +252,13 @@ int main() {
   const volatile auto &&testaref = &testa;
   meta = &TypeInfo<decltype(testaref)>::info;
   assert(meta->name() == "const volatile std::vector<std::array<char[2],10>>[5]*&&");
+}
+
+int main() {
+  TestPower();
+  TestBinarySearch();
+  TestIndexSequence(MakeIndexSequence<10>());
+  TestTuple();
+  TestReflection();
+  TestNameOf();
 }
