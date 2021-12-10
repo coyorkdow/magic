@@ -92,46 +92,49 @@ class Any {
   virtual const Any *first() const { return nullptr; }// for container
 
   virtual const Any *second() const { return nullptr; }// for container
+
+  virtual ~Any() = default;
 };
 
-#define MAKE_ID(v) \
-  NameEnum id() const override { return v; }
+#define RETURN(type, v) \
+  static type ret = v;  \
+  return ret;
 
-#define MAKE_NAME(exp)                       \
-  const std::string &name() const override { \
-    static std::string name = exp;           \
-    return name;                             \
-  }
+#define MAKE_ID(v) \
+  NameEnum id() const override { RETURN(NameEnum, v) }
+
+#define MAKE_NAME(exp) \
+  const std::string &name() const override { RETURN(std::string, exp) }
 
 #define MAKE_POINTER_LEVELS(v) \
-  int PointerLevels() const override { return v; }
+  int PointerLevels() const override { RETURN(int, v) }
 
 #define MAKE_POINTER_TO_CV(exp) \
-  bool PointerToCV() const override { return exp; }
+  bool PointerToCV() const override { RETURN(bool, exp) }
 
 #define MAKE_IS_LVALUE_REFERENCE(v) \
-  bool IsLvalueReference() const override { return v; }
+  bool IsLvalueReference() const override { RETURN(bool, v) }
 
 #define MAKE_IS_RVALUE_REFERENCE(v) \
-  bool IsRvalueReference() const override { return v; }
+  bool IsRvalueReference() const override { RETURN(bool, v) }
 
 #define MAKE_IS_CONST(v) \
-  bool IsConst() const override { return v; }
+  bool IsConst() const override { RETURN(bool, v) }
 
 #define MAKE_IS_VOLATILE(v) \
-  bool IsVolatile() const override { return v; }
+  bool IsVolatile() const override { RETURN(bool, v) }
 
 #define MAKE_SIZE(v) \
-  size_t size() const override { return v; }
+  size_t size() const override { RETURN(size_t, v) }
 
 #define MAKE_DECAY(v) \
-  const Any *decay() const override { return v; }
+  const Any *decay() const override { RETURN(const Any *, v) }
 
 #define MAKE_FIRST(ptr) \
-  const Any *first() const override { return ptr; }
+  const Any *first() const override { RETURN(const Any *, ptr) }
 
 #define MAKE_SECOND(ptr) \
-  const Any *second() const override { return ptr; }
+  const Any *second() const override { RETURN(const Any *, ptr) }
 
 template<class Tp>
 struct TypeInfo { static const Any info; };
