@@ -252,6 +252,10 @@ void TestNameOf() {
   const volatile auto &&testaref = &testa;
   meta = &TypeInfo<decltype(testaref)>::info;
   assert(meta->name() == "const volatile std::vector<std::array<char[2],10>>[5]*&&");
+
+  std::priority_queue<int, std::deque<int>, std::greater<int>> v;
+  meta = &TypeInfo<decltype(v)>::info;
+  assert(meta->name() == "std::priority_queue<int>");
 }
 
 int main() {

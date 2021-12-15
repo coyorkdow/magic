@@ -158,8 +158,8 @@ const Any TypeInfo<Tp>::info;
   const TypeInfo<Tp>::AnyImpl TypeInfo<Tp>::info;
 
 #define REGISTER_CONTAINER(Tp, Enum)                       \
-  template<class T1>                                       \
-  struct TypeInfo<Tp<T1>> {                                \
+  template<class T1, class... T2>                          \
+  struct TypeInfo<Tp<T1, T2...>> {                         \
    private:                                                \
     class AnyImpl : public Any {                           \
      public:                                               \
@@ -171,12 +171,12 @@ const Any TypeInfo<Tp>::info;
    public:                                                 \
     static const AnyImpl info;                             \
   };                                                       \
-  template<class T1>                                       \
-  const typename TypeInfo<Tp<T1>>::AnyImpl TypeInfo<Tp<T1>>::info;
+  template<class T1, class... T2>                          \
+  const typename TypeInfo<Tp<T1, T2...>>::AnyImpl TypeInfo<Tp<T1, T2...>>::info;
 
 #define REGISTER_PAIR_CONTAINER(Tp, Enum)                                                    \
-  template<class T1, class T2>                                                               \
-  struct TypeInfo<Tp<T1, T2>> {                                                              \
+  template<class T1, class T2, class... T3>                                                  \
+  struct TypeInfo<Tp<T1, T2, T3...>> {                                                       \
    private:                                                                                  \
     class AnyImpl : public Any {                                                             \
      public:                                                                                 \
@@ -189,8 +189,8 @@ const Any TypeInfo<Tp>::info;
    public:                                                                                   \
     static const AnyImpl info;                                                               \
   };                                                                                         \
-  template<class T1, class T2>                                                               \
-  const typename TypeInfo<Tp<T1, T2>>::AnyImpl TypeInfo<Tp<T1, T2>>::info;
+  template<class T1, class T2, class... T3>                                                  \
+  const typename TypeInfo<Tp<T1, T2, T3...>>::AnyImpl TypeInfo<Tp<T1, T2, T3...>>::info;
 
 REGISTER_FUNDAMENTAL_TYPE(unsigned short, UnsignedShort)
 REGISTER_FUNDAMENTAL_TYPE(unsigned int, UnsignedInt)
@@ -492,7 +492,23 @@ REGISTER_CONTAINER(std::multiset, STD_MultiSet)
 REGISTER_CONTAINER(std::unordered_set, STD_UnorderedSet)
 REGISTER_CONTAINER(std::unordered_multiset, STD_UnorderedMultiset)
 
-REGISTER_PAIR_CONTAINER(std::pair, STD_Pair)
+template<class T1, class T2>
+struct TypeInfo<std::pair<T1, T2>> {
+ private:
+  class AnyImpl : public Any {
+   public:
+    MAKE_ID(STD_Pair)
+    MAKE_NAME("std::pair<" + TypeInfo<T1>::info.name() + "," + TypeInfo<T2>::info.name() + ">")
+    MAKE_FIRST(&TypeInfo<T1>::info)
+    MAKE_SECOND(&TypeInfo<T2>::info)
+  };
+
+ public:
+  static const AnyImpl info;
+};
+template<class T1, class T2>
+const typename TypeInfo<std::pair<T1, T2>>::AnyImpl TypeInfo<std::pair<T1, T2>>::info;
+
 REGISTER_PAIR_CONTAINER(std::map, STD_Map)
 REGISTER_PAIR_CONTAINER(std::multimap, STD_Multimap)
 REGISTER_PAIR_CONTAINER(std::unordered_map, STD_UnorderedMap)
