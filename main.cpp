@@ -224,6 +224,7 @@ void TestNameOf() {
   using wrap3 = volatile wrap2;
   meta = &TypeInfo<wrap3>::info;
   assert(meta->name() == "const volatile int*const**volatile");
+  assert(meta->PointerLevels() == 3);
 
   std::vector<std::map<std::pair<volatile const int *, std::string>, uint64_t>> testv;
   meta = &TypeInfo<decltype(testv)>::info;
@@ -251,11 +252,16 @@ void TestNameOf() {
 
   const volatile auto &&testaref = &testa;
   meta = &TypeInfo<decltype(testaref)>::info;
-  assert(meta->name() == "const volatile std::vector<std::array<char[2],10>>[5]*&&");
+  assert(meta->name() == "std::vector<std::array<char[2],10>>[5]*const volatile&&");
 
   std::priority_queue<int, std::deque<int>, std::greater<int>> v;
   meta = &TypeInfo<decltype(v)>::info;
   assert(meta->name() == "std::priority_queue<int>");
+
+  meta =  &TypeInfo<int const[1][2][3]>::info;
+  assert(meta->name() == "const int[1][2][3]");
+  assert(meta->first()->name() == "int[2][3]");
+  assert(meta->first()->first()->name() == "int[3]");
 }
 
 int main() {

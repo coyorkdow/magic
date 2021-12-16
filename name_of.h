@@ -65,6 +65,9 @@ enum NameEnum {
 };
 
 class Any {
+  template<class Tp>
+  friend struct TypeInfo;
+
  public:
   virtual NameEnum id() const { return NameEnum::Unknown; }
 
@@ -76,8 +79,6 @@ class Any {
   virtual const Any *decay() const { return this; }
 
   virtual int PointerLevels() const { return 0; }
-
-  virtual bool PointerToCV() const { return false; }
 
   virtual bool IsLvalueReference() const { return false; }
 
@@ -94,6 +95,18 @@ class Any {
   virtual const Any *second() const { return nullptr; }// for container
 
   virtual ~Any() = default;
+
+  Any(const Any &) = delete;
+
+  Any(Any &&) = delete;
+
+ protected:
+  Any() = default;
+
+  virtual const std::string &ArraySizeName() const {
+    static std::string name;
+    return name;
+  }
 };
 
 #define RETURN(type, v) \
@@ -108,9 +121,6 @@ class Any {
 
 #define MAKE_POINTER_LEVELS(v) \
   int PointerLevels() const override { RETURN(int, v) }
-
-#define MAKE_POINTER_TO_CV(exp) \
-  bool PointerToCV() const override { RETURN(bool, exp) }
 
 #define MAKE_IS_LVALUE_REFERENCE(v) \
   bool IsLvalueReference() const override { RETURN(bool, v) }
@@ -135,6 +145,9 @@ class Any {
 
 #define MAKE_SECOND(ptr) \
   const Any *second() const override { RETURN(const Any *, ptr) }
+
+#define MAKE_ARRAY_SIZE_NAME(exp) \
+  const std::string &ArraySizeName() const override { RETURN(std::string, exp) }
 
 template<class Tp>
 struct TypeInfo { static const Any info; };
@@ -223,9 +236,8 @@ struct TypeInfo<const Tp> {
    public:
     MAKE_ID(TypeInfo<Tp>::info.id())
 #define C "const"
-    MAKE_NAME(decay()->PointerToCV() ? TypeInfo<Tp>::info.name() + C : C " " + TypeInfo<Tp>::info.name())
+    MAKE_NAME(decay()->PointerLevels() ? TypeInfo<Tp>::info.name() + C : C " " + TypeInfo<Tp>::info.name())
 #undef C
-    MAKE_POINTER_TO_CV(decay()->PointerToCV())
     MAKE_DECAY(TypeInfo<Tp>::info.decay())
     MAKE_POINTER_LEVELS(decay()->PointerLevels())
     MAKE_IS_LVALUE_REFERENCE(TypeInfo<Tp>::info.IsLvalueReference())
@@ -249,9 +261,8 @@ struct TypeInfo<volatile Tp> {
    public:
     MAKE_ID(TypeInfo<Tp>::info.id())
 #define V "volatile"
-    MAKE_NAME(decay()->PointerToCV() ? TypeInfo<Tp>::info.name() + V : V " " + TypeInfo<Tp>::info.name())
+    MAKE_NAME(decay()->PointerLevels() ? TypeInfo<Tp>::info.name() + V : V " " + TypeInfo<Tp>::info.name())
 #undef V
-    MAKE_POINTER_TO_CV(decay()->PointerToCV())
     MAKE_DECAY(TypeInfo<Tp>::info.decay())
     MAKE_POINTER_LEVELS(decay()->PointerLevels())
     MAKE_IS_LVALUE_REFERENCE(TypeInfo<Tp>::info.IsLvalueReference())
@@ -275,9 +286,8 @@ struct TypeInfo<const volatile Tp> {
    public:
     MAKE_ID(TypeInfo<Tp>::info.id())
 #define CV "const volatile"
-    MAKE_NAME(decay()->PointerToCV() ? TypeInfo<Tp>::info.name() + CV : CV " " + TypeInfo<Tp>::info.name())
+    MAKE_NAME(decay()->PointerLevels() ? TypeInfo<Tp>::info.name() + CV : CV " " + TypeInfo<Tp>::info.name())
 #undef CV
-    MAKE_POINTER_TO_CV(decay()->PointerToCV())
     MAKE_DECAY(TypeInfo<Tp>::info.decay())
     MAKE_POINTER_LEVELS(decay()->PointerLevels())
     MAKE_IS_LVALUE_REFERENCE(TypeInfo<Tp>::info.IsLvalueReference())
@@ -310,9 +320,6 @@ struct TypeInfo<Tp *> {
     MAKE_NAME(TypeInfo<Tp>::info.name() + "*")
     MAKE_POINTER_LEVELS(TypeInfo<Tp>::info.PointerLevels() + 1)
     MAKE_FIRST(&TypeInfo<Tp>::info)
-#define DEREF TypeInfo<Tp>::info
-    MAKE_POINTER_TO_CV(DEREF.PointerToCV() | DEREF.IsConst() | DEREF.IsVolatile())
-#undef DEREF
   };
 
  public:
@@ -329,7 +336,6 @@ struct TypeInfo<Tp &> {
     MAKE_ID(TypeInfo<Tp>::info.id())
     MAKE_NAME(TypeInfo<Tp>::info.name() + "&")
     MAKE_DECAY(TypeInfo<Tp>::info.decay())
-    MAKE_POINTER_TO_CV(decay()->PointerToCV())
     MAKE_POINTER_LEVELS(decay()->PointerLevels())
     MAKE_IS_LVALUE_REFERENCE(true)
     MAKE_SIZE(decay()->size())
@@ -351,7 +357,6 @@ struct TypeInfo<Tp &&> {
     MAKE_ID(TypeInfo<Tp>::info.id())
     MAKE_NAME(TypeInfo<Tp>::info.name() + "&&")
     MAKE_DECAY(TypeInfo<Tp>::info.decay())
-    MAKE_POINTER_TO_CV(decay()->PointerToCV())
     MAKE_POINTER_LEVELS(decay()->PointerLevels())
     MAKE_IS_RVALUE_REFERENCE(true)
     MAKE_SIZE(decay()->size())
@@ -377,9 +382,11 @@ struct TypeInfo<Tp[Size]> {
   class AnyImpl : public Any {
    public:
     MAKE_ID(Array)
-    MAKE_NAME(TypeInfo<Tp>::info.name() + "[" + std::to_string(Size) + "]")
+    MAKE_NAME(decay()->name() + ArraySizeName())
+    MAKE_DECAY(TypeInfo<Tp>::info.decay())
     MAKE_SIZE(Size)
     MAKE_FIRST(&TypeInfo<Tp>::info)
+    MAKE_ARRAY_SIZE_NAME("[" + std::to_string(Size) + "]" + TypeInfo<Tp>::info.ArraySizeName())
   };
 
  public:
@@ -394,11 +401,11 @@ struct TypeInfo<const Tp[Size]> {
   class AnyImpl : public Any {
    public:
     MAKE_ID(Array)
-    MAKE_NAME("const " + TypeInfo<Tp>::info.name() + "[" + std::to_string(Size) + "]")
+    MAKE_NAME("const " + TypeInfo<Tp[Size]>::info.name())
     MAKE_DECAY(TypeInfo<Tp>::info.decay())
     MAKE_IS_CONST(true);
     MAKE_SIZE(Size)
-    MAKE_FIRST(decay()->first())
+    MAKE_FIRST(TypeInfo<Tp[Size]>::info.first())
   };
 
  public:
@@ -413,11 +420,11 @@ struct TypeInfo<volatile Tp[Size]> {
   class AnyImpl : public Any {
    public:
     MAKE_ID(Array)
-    MAKE_NAME("volatile " + TypeInfo<Tp>::info.name() + "[" + std::to_string(Size) + "]")
+    MAKE_NAME("volatile " + TypeInfo<Tp[Size]>::info.name())
     MAKE_DECAY(TypeInfo<Tp>::info.decay())
     MAKE_IS_VOLATILE(true);
     MAKE_SIZE(Size)
-    MAKE_FIRST(decay()->first())
+    MAKE_FIRST(TypeInfo<Tp[Size]>::info.first())
   };
 
  public:
@@ -432,12 +439,12 @@ struct TypeInfo<const volatile Tp[Size]> {
   class AnyImpl : public Any {
    public:
     MAKE_ID(Array)
-    MAKE_NAME("const volatile " + TypeInfo<Tp>::info.name() + "[" + std::to_string(Size) + "]")
+    MAKE_NAME("const volatile " + TypeInfo<Tp[Size]>::info.name())
     MAKE_DECAY(TypeInfo<Tp>::info.decay())
     MAKE_IS_CONST(true);
     MAKE_IS_VOLATILE(true);
     MAKE_SIZE(Size)
-    MAKE_FIRST(decay()->first())
+    MAKE_FIRST(TypeInfo<Tp[Size]>::info.first())
   };
 
  public:
