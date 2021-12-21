@@ -14,4 +14,6 @@ add_executable(magic
         binary_search.h
         index_sequence.h
         tuple.h
-        reflection.h name_of.h)
+        reflection.h
+        name_of.h
+        traits.h)

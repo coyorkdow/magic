@@ -9,6 +9,7 @@
 #include "index_sequence.h"
 #include "quick_power.h"
 #include "reflection.h"
+#include "traits.h"
 #include "tuple.h"
 
 using namespace magic;
@@ -20,24 +21,21 @@ inline std::ostream &operator<<(std::ostream &os, const std::pair<T1, T2> &v) {
   return os;
 }
 
-template<template<class... Args> class ContainerT, class... Args>
-std::ostream &operator<<(std::ostream &os,
-                         const ContainerT<Args...> &container) {
+template<class ContainerT>
+typename std::enable_if<IsIterable<ContainerT>{} && !std::is_same<ContainerT, std::string>{},
+                        std::ostream>::type &
+operator<<(std::ostream &os, const ContainerT &container) {
+  using std::begin;
+  using std::end;
   os << '[';
-  auto it = container.begin();
-  if (it != container.end()) {
+  auto it = begin(container), ed = end(container);
+  if (it != ed) {
     os << *it;
-    while (++it != container.end()) {
+    while (++it != ed) {
       os << ' ' << *it;
     }
   }
   os << ']';
-  return os;
-}
-
-inline std::ostream &operator<<(std::ostream &os, const std::string &str) {
-  for (const char &c : str)
-    os << c;
   return os;
 }
 
@@ -258,7 +256,7 @@ void TestNameOf() {
   meta = &TypeInfo<decltype(v)>::info;
   assert(meta->name() == "std::priority_queue<int>");
 
-  meta =  &TypeInfo<int const[1][2][3]>::info;
+  meta = &TypeInfo<int const[1][2][3]>::info;
   assert(meta->name() == "const int[1][2][3]");
   assert(meta->first()->name() == "int[2][3]");
   assert(meta->first()->first()->name() == "int[3]");
