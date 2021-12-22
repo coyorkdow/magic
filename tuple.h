@@ -5,7 +5,10 @@
 #ifndef MAGIC__TUPLE_H_
 #define MAGIC__TUPLE_H_
 
+#include <type_traits>
+
 #include "index_sequence.h"
+#include "util.h"
 
 namespace magic {
 
@@ -85,11 +88,8 @@ struct TupleSize;
 
 template<class... Tp>
 struct TupleSize<Tuple<Tp...>> {
-  static const size_t result;
+  static const size_t size = sizeof...(Tp);
 };
-
-template<class... Tp>
-const size_t TupleSize<Tuple<Tp...>>::result = sizeof...(Tp);
 
 template<class... Tp>
 inline constexpr Tuple<typename std::decay<Tp>::type...> MakeTuple(Tp &&...t) {

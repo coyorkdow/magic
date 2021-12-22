@@ -30,11 +30,12 @@ class TypeFieldsScheme;
     using rT_ = std::remove_reference<decltype(MakeTuple(__VA_ARGS__))>::type; \
                                                                                \
    public:                                                                     \
-    static constexpr rT_ result = MakeTuple(__VA_ARGS__);                      \
+    static constexpr rT_ result() {                                            \
+      return MakeTuple(__VA_ARGS__);                                           \
+    }                                                                          \
     static constexpr auto name = #Tp;                                          \
     static constexpr size_t size = MakeTuple(__VA_ARGS__).size();              \
   };                                                                           \
-  constexpr typename TypeFieldsScheme<Tp>::rT_ TypeFieldsScheme<Tp>::result;   \
                                                                                \
   template<>                                                                   \
   struct IsReflectableType<Tp> : public std::true_type {};                     \
@@ -88,11 +89,9 @@ class AllFields {
 
   explicit AllFields(Tp &val) : val_(val) {}
 
-  static constexpr size_t size_ = TypeFieldsScheme<Tp>::result.size();
+  static constexpr size_t size_ = TypeFieldsScheme<Tp>::result().size();
 
   using UnifiedFields = UnifiedField[size_];
-
-  static const UnifiedFields &res_;
 
   template<class TupleField>
   static UnifiedField HandleField(TupleField &&field) {
@@ -108,17 +107,19 @@ class AllFields {
 
   template<size_t... N>
   static const UnifiedFields &Impl(IndexSequence<N...>) {
-    static const auto scheme = TypeFieldsScheme<Tp>::result;
+    static const auto scheme = TypeFieldsScheme<Tp>::result();
     static const UnifiedFields expander = {HandleField(scheme.template Get<N>())...};
     return expander;
   }
+
+  static const UnifiedFields &res_;
 
   Tp &val_;
 };
 
 template<class Tp>
 const typename AllFields<Tp>::UnifiedFields &AllFields<Tp>::res_ =
-    AllFields<Tp>::Impl(MakeIndexSequence<TypeFieldsScheme<Tp>::result.size()>());
+    AllFields<Tp>::Impl(MakeIndexSequence<TypeFieldsScheme<Tp>::result().size()>());
 
 template<class Tp>
 AllFields<decay_t<Tp>> GetAllFields(Tp &&val) {
@@ -126,8 +127,8 @@ AllFields<decay_t<Tp>> GetAllFields(Tp &&val) {
 }
 
 template<size_t Index, class T>
-auto GetField(T &&var) -> decltype(TypeFieldsScheme<decay_t<T>>::result.template Get<Index>()) {
-  return TypeFieldsScheme<decay_t<T>>::result.template Get<Index>();
+auto GetField(T &&var) -> decltype(TypeFieldsScheme<decay_t<T>>::result().template Get<Index>()) {
+  return TypeFieldsScheme<decay_t<T>>::result().template Get<Index>();
 }
 
 template<size_t Index, class T>
@@ -165,7 +166,7 @@ class MakeHandler {
   void operator()(Field &&field) {
     //    static_assert(typename std::decay<Field>::type().size() == 3,
     //                  "invalid argument, not a Filed");
-    static_assert(TupleSize<decay_t<Field>>::result == 3, "invalid argument, not a Filed");
+    static_assert(TupleSize<decay_t<Field>>::size == 3, "invalid argument, not a Filed");
     Fn()(var_.*std::forward<Field>(field).template Get<0>(),
          std::forward<Field>(field).template Get<1>(),
          std::forward<Field>(field).template Get<2>());
@@ -180,7 +181,7 @@ class ForEachField {
  public:
   template<class T>
   void Iterate(T &&var) {
-    static auto scheme = TypeFieldsScheme<decay_t<T>>::result;
+    static auto scheme = TypeFieldsScheme<decay_t<T>>::result();
     scheme.ForEach(MakeHandler<T, Handler>(var));
   };
 };

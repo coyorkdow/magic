@@ -5,6 +5,9 @@
 #ifndef MAGIC__UTIL_H_
 #define MAGIC__UTIL_H_
 
+#include <cstddef>
+#include <cstdint>
+
 namespace magic {
 
 template<bool Cond, class Then, class Else>

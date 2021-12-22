@@ -10,13 +10,14 @@
 namespace magic {
 
 template<uint64_t Num>
-struct MaxDigit { static const uint64_t result; };
-
-template<uint64_t Num>
-const uint64_t MaxDigit<Num>::result = 1 + MaxDigit<(Num >> 1)>::result;
+struct MaxDigit {
+  static const uint64_t result = 1 + MaxDigit<(Num >> 1)>::result;
+};
 
 template<>
-const uint64_t MaxDigit<0>::result = 0;
+struct MaxDigit<0> {
+  static const uint64_t result = 0;
+};
 
 template<uint64_t Base, uint64_t Exp, uint64_t Mod>
 class Power {
