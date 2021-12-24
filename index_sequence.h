@@ -5,6 +5,8 @@
 #ifndef MAGIC__INDEX_SEQUENCE_H_
 #define MAGIC__INDEX_SEQUENCE_H_
 
+#include "util.h"
+
 namespace magic {
 
 template<size_t...>

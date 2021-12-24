@@ -64,6 +64,8 @@ enum NameEnum {
   STD_UnorderedMultiset
 };
 
+namespace {// Use anonymous namespace to avoid symbols redefinition.
+
 class Any {
   template<class Tp>
   friend struct TypeInfo;
@@ -520,6 +522,8 @@ REGISTER_PAIR_CONTAINER(std::map, STD_Map)
 REGISTER_PAIR_CONTAINER(std::multimap, STD_Multimap)
 REGISTER_PAIR_CONTAINER(std::unordered_map, STD_UnorderedMap)
 REGISTER_PAIR_CONTAINER(std::unordered_multimap, STD_UnorderedMultimap)
+
+}// namespace
 
 }// namespace magic
 
