@@ -14,7 +14,7 @@ add_executable(magic
         index_sequence.h
         tuple.h
         reflection.h
-        name_of.h
+        type_of.h
         traits.h
 
         examples/main.cpp
