@@ -101,7 +101,7 @@ class AllFields {
     std::string name = std::forward<TupleField>(field).template Get<1>();
     std::string tag = std::forward<TupleField>(field).template Get<2>();
     using rT = decltype(base->*(std::forward<TupleField>(field).template Get<0>()));
-    const Any *meta = &TypeInfo<typename std::remove_reference<rT>::type>::info;
+    const Any *meta = &TypeInfo<typename std::remove_reference<rT>::type>::info();
     return MakeTuple(offset, std::move(name), std::move(tag), meta);
   }
 
@@ -144,7 +144,7 @@ auto NameOf(T &&val) -> decltype(GetField<Index>(std::forward<T>(val)).template 
 template<size_t Index, class T>
 std::string TypeNameOf(T &&val) {
   using rT = decltype(val.*GetField<Index>(std::forward<T>(val)).template Get<0>());
-  return TypeInfo<typename std::remove_reference<rT>::type>::info.name();
+  return TypeInfo<typename std::remove_reference<rT>::type>::info().name();
 }
 
 template<size_t Index, class T>
