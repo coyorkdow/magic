@@ -5,6 +5,8 @@
 #include "test_binary_search.h"
 
 #include <algorithm>
+#include <cassert>
+#include <iterator>
 
 using namespace magic;
 

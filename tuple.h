@@ -6,6 +6,7 @@
 #define MAGIC__TUPLE_H_
 
 #include <type_traits>
+#include <utility>
 
 #include "index_sequence.h"
 #include "util.h"

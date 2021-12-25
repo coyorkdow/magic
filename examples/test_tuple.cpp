@@ -4,6 +4,7 @@
 
 #include "test_tuple.h"
 
+#include <cassert>
 #include <string>
 
 using namespace magic;
