@@ -5,7 +5,7 @@
 #ifndef MAGIC_EXAMPLES_TEST_NAME_OF_H_
 #define MAGIC_EXAMPLES_TEST_NAME_OF_H_
 
-#include "name_of.h"
+#include "type_of.h"
 
 void TestNameOf();
 

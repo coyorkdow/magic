@@ -14,15 +14,14 @@ using namespace magic;
 class ReflectHandler {
  public:
   template<typename T>
-  void operator()(T &&var, const char *name, const char *tag) {
+  void operator()(T &&val, const char *name, const char *tag) {
     std::cout << "tag: " << std::setw(8) << tag;
     std::cout << "│name: " << std::setw(8) << name;
-    std::cout << "│value: " << var << '\n';
-  }
-  void operator()(float *var, const char *name, const char *tag) {
-    std::cout << "tag: " << std::setw(8) << tag;
-    std::cout << "│name: " << std::setw(8) << name;
-    std::cout << "│value: " << *var << '\n';
+    if (std::is_same<decay_t<T>, float *>{}) {
+      std::cout << "│value: " << **reinterpret_cast<float **>(&val) << '\n';
+    } else {
+      std::cout << "│value: " << val << '\n';
+    }
   }
 };
 
@@ -46,7 +45,7 @@ void TestReflection() {
   for (size_t i = 0; i < fields.size(); i++) {
     auto typeinfo = fields.TypeOf(i);
     switch (typeinfo->id()) {
-      case NameEnum::Float:
+      case TypeEnum::Float:
         if (typeinfo->PointerLevels() == 0) {
           fields.Set(i, (float) 99);
         } else if (typeinfo->PointerLevels() == 1) {
@@ -54,18 +53,18 @@ void TestReflection() {
           *ptr = 100;
         }
         break;
-      case NameEnum::STD_Vector:
+      case TypeEnum::STD_Vector:
         switch (typeinfo->first()->id()) {
-          case NameEnum::Int:
+          case TypeEnum::Int:
             fields.Set(i, std::vector<int>{5, 6, 7, 8});
             break;
-          case NameEnum::Double:
+          case TypeEnum::Double:
             fields.Set(i, std::vector<double>{5.5, 6.6});
             break;
           default:;
         }
         break;
-      case NameEnum::STD_String:
+      case TypeEnum::STD_String:
         fields.Set(i, std::string("yet another string"));
         break;
       default:;

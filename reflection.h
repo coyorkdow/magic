@@ -8,7 +8,7 @@
 #include <functional>
 #include <type_traits>
 
-#include "name_of.h"
+#include "type_of.h"
 #include "tuple.h"
 
 namespace magic {
@@ -47,7 +47,7 @@ class TypeFieldsScheme;
 
 #define IS_REFLECTABLE(val) IsReflectableType<decay_t<decltype(val)>>()
 
-using UnifiedField = Tuple<size_t, std::string, std::string, const Any *>;
+using UnifiedField = Tuple<size_t, std::string, std::string, const TypeInfoT *>;
 
 template<class Tp>
 class AllFields {
@@ -67,7 +67,7 @@ class AllFields {
     return res_[ind].template Get<2>();
   }
 
-  const Any *TypeOf(size_t ind) const {
+  const TypeInfoT *TypeOf(size_t ind) const {
     assert(ind < size());
     return res_[ind].template Get<3>();
   }
@@ -101,7 +101,7 @@ class AllFields {
     std::string name = std::forward<TupleField>(field).template Get<1>();
     std::string tag = std::forward<TupleField>(field).template Get<2>();
     using rT = decltype(base->*(std::forward<TupleField>(field).template Get<0>()));
-    const Any *meta = &TypeInfo<typename std::remove_reference<rT>::type>::info();
+    const TypeInfoT *meta = &TypeInfo<typename std::remove_reference<rT>::type>::info();
     return MakeTuple(offset, std::move(name), std::move(tag), meta);
   }
 

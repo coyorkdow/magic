@@ -66,7 +66,7 @@ assert(t.Get<2>() == "string");
 auto tt = MakeTuple(1, "1234", 8.8);
 ```
 
-`name_of.h`
+`type_of.h`
 
 Get type info during runtime.
 
@@ -75,9 +75,9 @@ Get type info during runtime.
 std::vector<std::map<std::pair<volatile const int *, std::string>, uint64_t>> testv;
 meta = &TypeInfo<decltype(testv)>::info;
 assert(meta->name() == "std::vector<std::map<std::pair<const volatile int*,std::string>,unsigned long long>>");
-assert(meta->id() == NameEnum::STD_Vector);
+assert(meta->id() == TypeEnum::STD_Vector);
 assert(meta->first()->name() == "std::map<std::pair<const volatile int*,std::string>,unsigned long long>");
-assert(meta->first()->id() == NameEnum::STD_Map);
+assert(meta->first()->id() == TypeEnum::STD_Map);
 
 meta = meta->first();
 assert(meta->first()->name() == "std::pair<const volatile int*,std::string>");
@@ -102,7 +102,7 @@ auto fields = GetAllFields(a);
 for (size_t i = 0; i < fields.size(); i++) {
   auto typeinfo = fields.TypeOf(i);
   switch (typeinfo->id()) {
-    case NameEnum::Float:
+    case TypeEnum::Float:
       if (typeinfo->PointerLevels() == 0) {
         fields.Set(i, (float) 99);
       } else if (typeinfo->PointerLevels() == 1) {
@@ -110,18 +110,18 @@ for (size_t i = 0; i < fields.size(); i++) {
         *ptr = 100;
       }
       break;
-    case NameEnum::STD_Vector:
+    case TypeEnum::STD_Vector:
       switch (typeinfo->first()->id()) {
-        case NameEnum::Int:
+        case TypeEnum::Int:
           fields.Set(i, std::vector<int>{5, 6, 7, 8});
           break;
-        case NameEnum::Double:
+        case TypeEnum::Double:
           fields.Set(i, std::vector<double>{5.5, 6.6});
           break;
         default:;
       }
       break;
-    case NameEnum::STD_String:
+    case TypeEnum::STD_String:
       fields.Set(i, std::string("yet another string"));
       break;
     default:;

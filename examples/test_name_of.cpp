@@ -8,7 +8,7 @@ using namespace magic;
 
 void TestNameOf() {
   using base = const volatile int;
-  const Any *meta = &TypeInfo<base>::info();
+  const TypeInfoT *meta = &TypeInfo<base>::info();
   assert(meta->name() == "const volatile int");
   using wrap1 = base *;
   meta = &TypeInfo<wrap1>::info();
@@ -24,9 +24,9 @@ void TestNameOf() {
   std::vector<std::map<std::pair<volatile const int *, std::string>, uint64_t>> testv;
   meta = &TypeInfo<decltype(testv)>::info();
   assert(meta->name() == "std::vector<std::map<std::pair<const volatile int*,std::string>,unsigned long long>>");
-  assert(meta->id() == NameEnum::STD_Vector);
+  assert(meta->id() == TypeEnum::STD_Vector);
   assert(meta->first()->name() == "std::map<std::pair<const volatile int*,std::string>,unsigned long long>");
-  assert(meta->first()->id() == NameEnum::STD_Map);
+  assert(meta->first()->id() == TypeEnum::STD_Map);
 
   meta = meta->first();
   assert(meta->first()->name() == "std::pair<const volatile int*,std::string>");
