@@ -4,6 +4,8 @@
 
 #include "test_name_of.h"
 
+#include "cassert"
+
 using namespace magic;
 
 void TestNameOf() {
@@ -21,7 +23,7 @@ void TestNameOf() {
   assert(meta->name() == "const volatile int*const**volatile");
   assert(meta->PointerLevels() == 3);
 
-  std::vector<std::map<std::pair<volatile const int *, std::string>, uint64_t>> testv;
+  std::vector<std::map<std::pair<volatile const int *, std::string>, unsigned long long>> testv;
   meta = &TypeInfo<decltype(testv)>::info();
   assert(meta->name() == "std::vector<std::map<std::pair<const volatile int*,std::string>,unsigned long long>>");
   assert(meta->id() == TypeEnum::STD_Vector);

@@ -5,11 +5,12 @@
 #ifndef MAGIC__REFLECTION_H_
 #define MAGIC__REFLECTION_H_
 
+#include <cassert>
 #include <functional>
 #include <type_traits>
 
-#include "type_of.h"
 #include "tuple.h"
+#include "type_of.h"
 
 namespace magic {
 
