@@ -31,7 +31,7 @@ struct EndType<T, decltype(end(declval<T>()), ++end(declval<T>()), (void) *end(d
 };
 
 template<class T, class... Args>
-auto IsConstructibleImpl(int) -> decltype(T(declval<Args&>()...), std::true_type{});
+auto IsConstructibleImpl(int) -> decltype(T(declval<Args>()...), std::true_type{});
 
 template<class T, class...>
 auto IsConstructibleImpl(...) -> std::false_type;
