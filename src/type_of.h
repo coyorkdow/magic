@@ -65,18 +65,18 @@ enum TypeEnum {
 };
 
 class TypeInfoT {
-  template<class Tp>
+  template <class Tp>
   friend class TypeInfo;
 
  public:
   virtual TypeEnum id() const { return TypeEnum::Unknown; }
 
-  virtual const std::string &name() const {
+  virtual const std::string& name() const {
     static std::string name = "unknown";
     return name;
   }
 
-  virtual const TypeInfoT *decay() const { return this; }
+  virtual const TypeInfoT* decay() const { return this; }
 
   virtual int PointerLevels() const { return 0; }
 
@@ -88,22 +88,22 @@ class TypeInfoT {
 
   virtual bool IsVolatile() const { return false; }
 
-  virtual size_t size() const { return 0; }// for Array and STD_Array
+  virtual size_t size() const { return 0; }  // for Array and STD_Array
 
-  virtual const TypeInfoT *first() const { return nullptr; }// for container
+  virtual const TypeInfoT* first() const { return nullptr; }  // for container
 
-  virtual const TypeInfoT *second() const { return nullptr; }// for container
+  virtual const TypeInfoT* second() const { return nullptr; }  // for container
 
   virtual ~TypeInfoT() = default;
 
-  TypeInfoT(const TypeInfoT &) = delete;
+  TypeInfoT(const TypeInfoT&) = delete;
 
-  TypeInfoT(TypeInfoT &&) = delete;
+  TypeInfoT(TypeInfoT&&) = delete;
 
  protected:
   TypeInfoT() = default;
 
-  virtual const std::string &ArraySizeName() const {
+  virtual const std::string& ArraySizeName() const {
     static std::string name;
     return name;
   }
@@ -117,7 +117,7 @@ class TypeInfoT {
   TypeEnum id() const override { RETURN(TypeEnum, v) }
 
 #define MAKE_NAME(exp) \
-  const std::string &name() const override { RETURN(std::string, exp) }
+  const std::string& name() const override { RETURN(std::string, exp) }
 
 #define MAKE_POINTER_LEVELS(v) \
   int PointerLevels() const override { RETURN(int, v) }
@@ -138,31 +138,31 @@ class TypeInfoT {
   size_t size() const override { RETURN(size_t, v) }
 
 #define MAKE_DECAY(v) \
-  const TypeInfoT *decay() const override { RETURN(const TypeInfoT *, v) }
+  const TypeInfoT* decay() const override { RETURN(const TypeInfoT*, v) }
 
 #define MAKE_FIRST(ptr) \
-  const TypeInfoT *first() const override { RETURN(const TypeInfoT *, ptr) }
+  const TypeInfoT* first() const override { RETURN(const TypeInfoT*, ptr) }
 
 #define MAKE_SECOND(ptr) \
-  const TypeInfoT *second() const override { RETURN(const TypeInfoT *, ptr) }
+  const TypeInfoT* second() const override { RETURN(const TypeInfoT*, ptr) }
 
 #define MAKE_ARRAY_SIZE_NAME(exp) \
-  const std::string &ArraySizeName() const override { RETURN(std::string, exp) }
+  const std::string& ArraySizeName() const override { RETURN(std::string, exp) }
 
 #define MAKE_IMPL_INFO(type)  \
-  static const type &info() { \
+  static const type& info() { \
     static const type info;   \
     return info;              \
   }
 
-template<class Tp>
+template <class Tp>
 class TypeInfo {
  public:
   MAKE_IMPL_INFO(TypeInfoT)
 };
 
 #define REGISTER_FUNDAMENTAL_TYPE(Tp, Enum) \
-  template<>                                \
+  template <>                               \
   class TypeInfo<Tp> {                      \
    private:                                 \
     class AnyImpl : public TypeInfoT {      \
@@ -176,7 +176,7 @@ class TypeInfo {
   };
 
 #define REGISTER_CONTAINER(Tp, Enum)                         \
-  template<class T1, class... T2>                            \
+  template <class T1, class... T2>                           \
   class TypeInfo<Tp<T1, T2...>> {                            \
    private:                                                  \
     class AnyImpl : public TypeInfoT {                       \
@@ -191,7 +191,7 @@ class TypeInfo {
   };
 
 #define REGISTER_PAIR_CONTAINER(Tp, Enum)                                                        \
-  template<class T1, class T2, class... T3>                                                      \
+  template <class T1, class T2, class... T3>                                                     \
   class TypeInfo<Tp<T1, T2, T3...>> {                                                            \
    private:                                                                                      \
     class AnyImpl : public TypeInfoT {                                                           \
@@ -230,7 +230,7 @@ REGISTER_FUNDAMENTAL_TYPE(std::nullptr_t, STD_NullptrT)
 //========================== TypeInfo with cv qualifier begin
 //==========================
 
-template<class Tp>
+template <class Tp>
 class TypeInfo<const Tp> {
  private:
   class AnyImpl : public TypeInfoT {
@@ -253,7 +253,7 @@ class TypeInfo<const Tp> {
   MAKE_IMPL_INFO(AnyImpl)
 };
 
-template<class Tp>
+template <class Tp>
 class TypeInfo<volatile Tp> {
  private:
   class AnyImpl : public TypeInfoT {
@@ -276,7 +276,7 @@ class TypeInfo<volatile Tp> {
   MAKE_IMPL_INFO(AnyImpl)
 };
 
-template<class Tp>
+template <class Tp>
 class TypeInfo<const volatile Tp> {
  private:
   class AnyImpl : public TypeInfoT {
@@ -306,8 +306,8 @@ class TypeInfo<const volatile Tp> {
 // ======================= TypeInfo with ptr and reference begin
 // =======================
 
-template<class Tp>
-class TypeInfo<Tp *> {
+template <class Tp>
+class TypeInfo<Tp*> {
  private:
   class AnyImpl : public TypeInfoT {
    public:
@@ -321,8 +321,8 @@ class TypeInfo<Tp *> {
   MAKE_IMPL_INFO(AnyImpl)
 };
 
-template<class Tp>
-class TypeInfo<Tp &> {
+template <class Tp>
+class TypeInfo<Tp&> {
  private:
   class AnyImpl : public TypeInfoT {
    public:
@@ -340,8 +340,8 @@ class TypeInfo<Tp &> {
   MAKE_IMPL_INFO(AnyImpl)
 };
 
-template<class Tp>
-class TypeInfo<Tp &&> {
+template <class Tp>
+class TypeInfo<Tp&&> {
  private:
   class AnyImpl : public TypeInfoT {
    public:
@@ -365,7 +365,7 @@ class TypeInfo<Tp &&> {
 // =============================== Array type begin
 // ===============================
 
-template<class Tp, size_t Size>
+template <class Tp, size_t Size>
 class TypeInfo<Tp[Size]> {
  private:
   class AnyImpl : public TypeInfoT {
@@ -382,7 +382,7 @@ class TypeInfo<Tp[Size]> {
   MAKE_IMPL_INFO(AnyImpl)
 };
 
-template<class Tp, size_t Size>
+template <class Tp, size_t Size>
 class TypeInfo<const Tp[Size]> {
  private:
   class AnyImpl : public TypeInfoT {
@@ -399,7 +399,7 @@ class TypeInfo<const Tp[Size]> {
   MAKE_IMPL_INFO(AnyImpl)
 };
 
-template<class Tp, size_t Size>
+template <class Tp, size_t Size>
 class TypeInfo<volatile Tp[Size]> {
  private:
   class AnyImpl : public TypeInfoT {
@@ -416,7 +416,7 @@ class TypeInfo<volatile Tp[Size]> {
   MAKE_IMPL_INFO(AnyImpl)
 };
 
-template<class Tp, size_t Size>
+template <class Tp, size_t Size>
 class TypeInfo<const volatile Tp[Size]> {
  private:
   class AnyImpl : public TypeInfoT {
@@ -437,7 +437,7 @@ class TypeInfo<const volatile Tp[Size]> {
 // =============================== Array type end
 // ===============================
 
-template<>
+template <>
 class TypeInfo<std::string> {
  private:
   class AnyImpl : public TypeInfoT {
@@ -450,7 +450,7 @@ class TypeInfo<std::string> {
   MAKE_IMPL_INFO(AnyImpl)
 };
 
-template<class Tp, size_t Size>
+template <class Tp, size_t Size>
 class TypeInfo<std::array<Tp, Size>> {
  private:
   class AnyImpl : public TypeInfoT {
@@ -477,7 +477,7 @@ REGISTER_CONTAINER(std::multiset, STD_MultiSet)
 REGISTER_CONTAINER(std::unordered_set, STD_UnorderedSet)
 REGISTER_CONTAINER(std::unordered_multiset, STD_UnorderedMultiset)
 
-template<class T1, class T2>
+template <class T1, class T2>
 class TypeInfo<std::pair<T1, T2>> {
  private:
   class AnyImpl : public TypeInfoT {
@@ -497,6 +497,6 @@ REGISTER_PAIR_CONTAINER(std::multimap, STD_Multimap)
 REGISTER_PAIR_CONTAINER(std::unordered_map, STD_UnorderedMap)
 REGISTER_PAIR_CONTAINER(std::unordered_multimap, STD_UnorderedMultimap)
 
-}// namespace magic
+}  // namespace magic
 
-#endif// MAGIC__NAME_OF_H_
+#endif  // MAGIC__NAME_OF_H_

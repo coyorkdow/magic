@@ -10,19 +10,19 @@
 
 namespace magic {
 
-template<bool Cond, class Then, class Else>
+template <bool Cond, class Then, class Else>
 struct IfThenElse;
 
-template<class Then, class Else>
+template <class Then, class Else>
 struct IfThenElse<true, Then, Else> {
   using result = Then;
 };
 
-template<class Then, class Else>
+template <class Then, class Else>
 struct IfThenElse<false, Then, Else> {
   using result = Else;
 };
 
-}// namespace magic
+}  // namespace magic
 
-#endif// MAGIC__UTIL_H_
+#endif  // MAGIC__UTIL_H_
