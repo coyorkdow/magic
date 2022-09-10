@@ -189,7 +189,7 @@ TEST(TestReflection, Main) {
   static_assert(IS_REFLECTABLE(a) == true, "");
   auto tt = MakeTuple(1, 2, 3);
   static_assert(IS_REFLECTABLE(tt) == false, "");
-  // std::cout << NameOf(a) << std::endl;
+
   EXPECT_EQ(NameOf(a), "A");
 
   EXPECT_EQ(ValueOf<0>(a), a.vi);
@@ -208,7 +208,6 @@ TEST(TestReflection, Main) {
 
   ForEachField<TypeAReflectHandler> iterator;
   iterator.Iterate(a, a);
-  std::cout << std::endl;
 
   auto fields = GetAllFields(a);
   for (size_t i = 0; i < fields.size(); i++) {
