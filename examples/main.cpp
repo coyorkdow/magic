@@ -12,6 +12,7 @@
 #include "reflection.h"
 #include "tuple.h"
 #include "type_of.h"
+#include "currying.h"
 
 using namespace magic;
 
@@ -80,7 +81,15 @@ TEST(TestTuple, Main) {
   ASSERT_EQ(tt.Get<2>(), 8.8);
 }
 
+template <typename Tp>
+void func(Tp&& arg) {
+  std::cout << TypeInfo<Tp>::info().name() << '\n';
+}
+
 TEST(TestNameOf, Main) {
+  int vi = 134;
+  func(vi);
+  func(std::move(vi));
   using base = const volatile int;
   const TypeInfoT* meta = &TypeInfo<base>::info();
   ASSERT_EQ(meta->name(), "const volatile int");
@@ -240,4 +249,9 @@ TEST(TestReflection, Main) {
   }
 
   iterator.Iterate(a, a);
+}
+
+TEST(TestCurrying, Main) {
+  CURRY(CURRY(std::vector, int), std::allocator<int>) v;
+//  std::cout << TypeInfo<decltype(v)>::info().name();
 }

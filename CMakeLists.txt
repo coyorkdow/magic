@@ -23,7 +23,7 @@ add_executable(magic
         src/reflection.h
         src/type_of.h
         src/traits.h
-
+        src/currying.h
         examples/main.cpp)
 
 target_compile_options(magic PUBLIC -g)
