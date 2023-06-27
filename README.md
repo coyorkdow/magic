@@ -1,3 +1,5 @@
+**This Repo has been deprecated. I wrote these codes when I was just an undergraduate student. Some codes are written during the first few months when I left the university and started a full-time enginner life. That's all hapended in a half year. From the view of today, That time I was just a c++ newbie and wrote some naive codes. This repo has been archived, and right now (2023/06) I'm dedicated to design and develop a new c++ reflect and serialization lib.**
+
 # magic
 Fantasic magic of modern c++
 
